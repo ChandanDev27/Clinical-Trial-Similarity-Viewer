@@ -1,9 +1,10 @@
 const express = require('express');
+const { getAllTrials, getTrialById, filterTrials } = require('../controllers/trialsController');
 const router = express.Router();
-const trialsController = require('../controllers/trialsController');
 
-router.get('/', trialsController.getAllTrials);
-router.get('/filter', trialsController.filterTrials);
-router.get('/:id', trialsController.getTrialById);
+// Define routes
+router.get('/', getAllTrials);
+router.get('/:id', getTrialById);
+router.get('/filter', filterTrials);
 
 module.exports = router;

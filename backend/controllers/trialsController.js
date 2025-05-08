@@ -47,6 +47,8 @@ exports.filterTrials = (req, res) => {
 
         let filtered = data;
 
+        console.log('Filtered Trials:', filtered);
+
         if (phase) {
             const phaseNormalized = phase.toLowerCase();
             filtered = filtered.filter(trial =>

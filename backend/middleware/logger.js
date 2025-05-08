@@ -1,4 +1,6 @@
-module.exports = (req, res, next) => {
-    console.log(`${req.method} request for '${req.url}'`);
+const logger = (req, res, next) => {
+    console.log(`${req.method} ${req.url}`);
     next();
 };
+
+module.exports = logger;
