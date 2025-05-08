@@ -1,10 +1,16 @@
 const express = require('express');
-const { getAllTrials, getTrialById, filterTrials } = require('../controllers/trialsController');
+const { 
+    getAllTrials, 
+    getTrialById, 
+    filterTrials,
+    getDashboardData
+} = require('../controllers/trialsController');
 const router = express.Router();
 
-// Define routes
+// REORDERED ROUTES - specific paths first
+router.get('/filter', filterTrials);  // This must come first
+router.get('/dashboard', getDashboardData);
 router.get('/', getAllTrials);
-router.get('/:id', getTrialById);
-router.get('/filter', filterTrials);
+router.get('/:id', getTrialById);    // Parameterized route last
 
 module.exports = router;
