@@ -13,8 +13,20 @@ app.use(cors());
 app.use(express.json());
 app.use(logger);
 
-// Routes
-app.use('/api/trials', trialsRoutes);
+const validateParams = (req, res, next) => {
+ 
+    ['page', 'limit'].forEach(param => {
+        if (req.query[param] && isNaN(req.query[param])) {
+            return res.status(400).json({
+                success: false,
+                message: `Invalid ${param} value`
+            });
+        }
+    });
+    next();
+};
+
+app.use('/api/trials', validateParams, trialsRoutes);
 
 // Error handling middleware
 app.use(errorHandler);

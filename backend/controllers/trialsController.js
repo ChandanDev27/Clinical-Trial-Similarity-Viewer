@@ -1,42 +1,66 @@
 const fs = require('fs');
 const path = require('path');
 
-// Utility: Load JSON data safely
-const loadSampleData = () => {
+let cachedData = null;
+let lastModified = null;
+const dataPath = path.join(__dirname, '../data/sample-data.json');
+
+// Load data with caching mechanism
+const loadDataWithCache = () => {
     try {
-        const dataPath = path.join(__dirname, '../data/sample-data.json');
-        const jsonData = fs.readFileSync(dataPath, 'utf8');
-        const data = JSON.parse(jsonData);
-        
-        // Fix data consistency issues
-        return data.map(trial => ({
-            ...trial,
-            eligibilityValues: {
-                ...trial.eligibilityValues,
-                enrollment: trial.eligibilityValues.enrollmentment || trial.eligibilityValues.enrollment,
-                // Remove the duplicate enrollmentment field
-                ...(trial.eligibilityValues.enrollmentment && { enrollmentment: undefined })
-            }
-        }));
+        const stats = fs.statSync(dataPath);
+        if (!cachedData || stats.mtime > lastModified) {
+            const rawData = JSON.parse(fs.readFileSync(dataPath, 'utf8'));
+            cachedData = rawData.map(processTrial).filter(validateTrial);
+            lastModified = stats.mtime;
+        }
+        return cachedData;
     } catch (error) {
-        console.error('Failed to load or parse sample data:', error);
+        console.error('Data loading failed:', error);
         return [];
     }
 };
 
+// Process trial data with adjustments
+const processTrial = (trial) => ({
+    ...trial,
+    eligibilityValues: {
+        ...trial.eligibilityValues,
+        enrollment: trial.eligibilityValues.enrollmentment || trial.eligibilityValues.enrollment,
+        enrollmentment: undefined
+    },
+    hasResults: trial.endDate ? new Date(trial.endDate) < new Date() : false
+});
+
+// Validate trial entries before use
+const validateTrial = (trial) => {
+    const requiredFields = ['nctId', 'similarity_score', 'phases', 'locations'];
+    return requiredFields.every(field => trial[field] !== undefined);
+};
+
+// Mapping countries to their respective regions
+const countryToRegion = {
+    'Austria': 'Europe', 'Belgium': 'Europe', 'Croatia': 'Europe', 'Czechia': 'Europe',
+    'Estonia': 'Europe', 'Finland': 'Europe', 'France': 'Europe', 'Germany': 'Europe',
+    'Greece': 'Europe', 'Hungary': 'Europe', 'Italy': 'Europe', 'Norway': 'Europe',
+    'Poland': 'Europe', 'Portugal': 'Europe', 'Serbia': 'Europe', 'Slovakia': 'Europe',
+    'Slovenia': 'Europe', 'Spain': 'Europe', 'Sweden': 'Europe', 'Ukraine': 'Europe',
+    'Brazil': 'Americas', 'Canada': 'Americas', 'Puerto Rico': 'Americas',
+    'United States': 'Americas', 'South Africa': 'Americas',
+    'China': 'Asia', 'Hong Kong': 'Asia', 'India': 'Asia', 'Japan': 'Asia',
+    'Korea, Republic of': 'Asia', 'Saudi Arabia': 'Asia',
+    'Unknown': 'Unknown'
+};
+
 // Get all clinical trials with pagination
-exports.getAllTrials = (req, res) => {  // Fixed typo in function name (was getAllTrials)
+exports.getAllTrials = (req, res) => {
     try {
         const { page = 1, limit = 10 } = req.query;
-        const data = loadSampleData();
+        const data = loadDataWithCache();
         
-        // Convert and validate pagination parameters
         const pageNum = Math.max(1, parseInt(page));
         const limitNum = Math.max(1, parseInt(limit));
-        const startIndex = (pageNum - 1) * limitNum;
-        const endIndex = pageNum * limitNum;
-        
-        const paginatedData = data.slice(startIndex, endIndex);
+        const paginatedData = data.slice((pageNum - 1) * limitNum, pageNum * limitNum);
         
         res.status(200).json({
             success: true,
@@ -47,190 +71,123 @@ exports.getAllTrials = (req, res) => {  // Fixed typo in function name (was getA
             data: paginatedData
         });
     } catch (error) {
-        res.status(500).json({ 
-            success: false,
-            message: 'Error loading data', 
-            error: error.message 
-        });
+        res.status(500).json({ success: false, message: 'Error loading data', error: error.message });
     }
 };
 
-// Get a clinical trial by ID (nctId)
+// Retrieve a clinical trial by ID
 exports.getTrialById = (req, res) => {
     try {
-        const data = loadSampleData();
+        const data = loadDataWithCache();
         const trialId = req.params.id;
         
-        // Case-insensitive search and handle missing nctId
-        const trial = data.find(t => 
-            t.nctId && t.nctId.toString().toUpperCase() === trialId.toString().toUpperCase()
-        );
+        const trial = data.find(t => t.nctId && t.nctId.toString().toUpperCase() === trialId.toString().toUpperCase());
         
-        if (trial) {
-            res.status(200).json({
-                success: true,
-                data: trial
-            });
-        } else {
-            res.status(404).json({ 
-                success: false,
-                message: 'Trial not found',
-                requestedId: trialId
-            });
-        }
+        trial 
+            ? res.status(200).json({ success: true, data: trial })
+            : res.status(404).json({ success: false, message: 'Trial not found', requestedId: trialId });
     } catch (error) {
-        res.status(500).json({ 
-            success: false,
-            message: 'Error loading data', 
-            error: error.message 
-        });
+        res.status(500).json({ success: false, message: 'Error loading data', error: error.message });
     }
 };
 
-// Filter trials by phase and/or location with pagination
+// Filter clinical trials based on criteria
 exports.filterTrials = (req, res) => {
     try {
-        const { phase, location, page = 1, limit = 10 } = req.query;
-        const data = loadSampleData();
+        const { phase, location, similarity_score, page = 1, limit = 10 } = req.query;
+        const data = loadDataWithCache();
 
-        let filtered = [...data]; // Create a copy to avoid mutating original
-        let filterMessages = [];
+        let filtered = [...data];
 
-        // PHASE FILTERING
+        if (similarity_score) {
+            const minScore = parseInt(similarity_score);
+            if (!isNaN(minScore)) filtered = filtered.filter(t => t.similarity_score >= minScore);
+        }
+
         if (phase) {
             const phaseUpper = phase.toUpperCase();
-            const originalCount = filtered.length;
-            
             filtered = filtered.filter(trial => {
-                if (!trial.phases) return false;
-                
-                // Handle both array and string phases
-                const trialPhases = Array.isArray(trial.phases) 
-                    ? trial.phases 
-                    : [trial.phases];
-                
-                return trialPhases.some(p => 
-                    p && p.toUpperCase() === phaseUpper
-                );
+                const trialPhases = Array.isArray(trial.phases) ? trial.phases : [trial.phases];
+                return trialPhases.some(p => p && p.toUpperCase() === phaseUpper);
             });
-
-            if (filtered.length === 0) {
-                filterMessages.push(`No trials found for phase: ${phase}`);
-            } else if (filtered.length === originalCount) {
-                filterMessages.push(`All trials are phase: ${phaseUpper}`);
-            }
         }
 
-        // LOCATION FILTERING
         if (location) {
             const locationLower = location.toLowerCase();
-            const originalCount = filtered.length;
-            
-            filtered = filtered.filter(trial => {
-                if (!trial.locations) return locationLower === 'unknown';
-                
-                if (locationLower === 'unknown') {
-                    return trial.locations.includes('Unknown') || 
-                           trial.locations.length === 0;
-                }
-                
-                return trial.locations.some(loc => 
-                    loc && loc.toLowerCase() === locationLower
-                );
-            });
-
-            if (filtered.length === 0) {
-                filterMessages.push(`No trials found for location: ${location}`);
-            }
+            filtered = filtered.filter(trial => trial.locations.some(loc => loc && loc.toLowerCase() === locationLower));
         }
 
-        // PAGINATION
         const pageNum = Math.max(1, parseInt(page));
         const limitNum = Math.max(1, parseInt(limit));
-        const startIndex = (pageNum - 1) * limitNum;
-        const endIndex = pageNum * limitNum;
-        
-        const paginatedData = filtered.slice(
-            Math.min(startIndex, filtered.length),
-            Math.min(endIndex, filtered.length)
-        );
+        const paginated = filtered.slice((pageNum-1)*limitNum, pageNum*limitNum);
 
-        res.status(200).json({
+        res.json({
             success: true,
-            total: filtered.length,
-            page: pageNum,
-            limit: limitNum,
-            totalPages: Math.ceil(filtered.length / limitNum),
-            messages: filterMessages.length ? filterMessages : undefined,
-            data: paginatedData
+            data: paginated,
+            meta: {
+                total: filtered.length,
+                page: pageNum,
+                limit: limitNum,
+                totalPages: Math.ceil(filtered.length / limitNum)
+            }
         });
-
     } catch (error) {
-        res.status(500).json({ 
-            success: false,
-            message: 'Error filtering data',
-            error: error.message
-        });
+        res.status(500).json({ success: false, message: 'Filtering failed', error: error.message });
     }
 };
 
-// Get data for dashboard view
+// Generate aggregated data for dashboard analytics
 exports.getDashboardData = (req, res) => {
     try {
-        const data = loadSampleData();
-        
-        // Aggregate data for dashboard
+        const data = loadDataWithCache();
+
         const dashboardData = {
-            totalTrials: data.length,
-            phases: countOccurrences(data.flatMap(t => t.phases || [])),
-            locations: countOccurrences(data.flatMap(t => t.locations || []).filter(l => l !== 'Unknown')),
-            sponsors: countOccurrences(data.map(t => t.sponsorType || 'Unknown')),
-            eligibilityMetrics: aggregateEligibilityMetrics(data),
-            lastUpdated: new Date().toISOString()
+            phases: data.reduce((acc, t) => {
+                t.phases.forEach(p => { acc[p] = (acc[p] || 0) + 1 });
+                return acc;
+            }, {}),
+            regions: data.flatMap(t => t.locations)
+                .map(l => countryToRegion[l] || 'Unknown')
+                .reduce((acc, r) => {
+                    acc[r] = (acc[r] || 0) + 1;
+                    return acc;
+                }, {}),
+            results: {
+                hasResults: data.filter(t => t.hasResults).length,
+                noResults: data.filter(t => !t.hasResults).length
+            },
+            sponsors: data.reduce((acc, t) => {
+                acc[t.sponsorType] = (acc[t.sponsorType] || 0) + 1;
+                return acc;
+            }, {})
         };
-        
-        res.status(200).json({
-            success: true,
-            data: dashboardData
-        });
+
+        res.json({ success: true, data: dashboardData });
+
     } catch (error) {
-        res.status(500).json({ 
-            success: false,
-            message: 'Error generating dashboard data', 
-            error: error.message 
-        });
+        res.status(500).json({ success: false, message: 'Dashboard generation failed', error: error.message });
     }
 };
 
-// Helper functions
-function countOccurrences(items) {
-    return items.reduce((acc, item) => {
-        if (item !== undefined && item !== null) {
-            acc[item] = (acc[item] || 0) + 1;
-        }
-        return acc;
-    }, {});
-}
+let selectedTrials = new Set();
 
-function aggregateEligibilityMetrics(trials) {
-    const metrics = {};
-    const eligibilityKeys = trials[0]?.eligibilityValues ? Object.keys(trials[0].eligibilityValues) : [];
-    
-    eligibilityKeys.forEach(key => {
-        const values = trials
-            .map(trial => trial.eligibilityValues?.[key])
-            .filter(val => typeof val === 'number');
-            
-        if (values.length > 0) {
-            metrics[key] = {
-                sum: values.reduce((sum, val) => sum + val, 0),
-                avg: values.reduce((sum, val) => sum + val, 0) / values.length,
-                min: Math.min(...values),
-                max: Math.max(...values),
-                count: values.length
-            };
-        }
-    });
-    
-    return metrics;
-}
+// Save selected trials
+exports.saveSelections = (req, res) => {
+    try {
+        const { trialIds } = req.body;
+        if (!Array.isArray(trialIds)) throw new Error('Invalid trial IDs format');
+        
+        const validIds = new Set(loadDataWithCache().map(t => t.nctId));
+        selectedTrials = new Set(trialIds.filter(id => validIds.has(id)));
+
+        res.json({ success: true, selectedCount: selectedTrials.size });
+
+    } catch (error) {
+        res.status(400).json({ success: false, message: 'Selection update failed', error: error.message });
+    }
+};
+
+// Retrieve saved trial selections
+exports.getSelections = (req, res) => {
+    res.json({ success: true, data: Array.from(selectedTrials) });
+};
