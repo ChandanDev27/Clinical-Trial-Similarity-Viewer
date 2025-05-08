@@ -1,62 +1,70 @@
 const fs = require('fs');
 const path = require('path');
 
-// Load sample data from JSON file
+// Utility: Load JSON data safely
 const loadSampleData = () => {
-    const dataPath = path.join(__dirname, '../data/sample-data.json');
-    const jsonData = fs.readFileSync(dataPath, 'utf8');
-    return JSON.parse(jsonData);
+    try {
+        const dataPath = path.join(__dirname, '../data/sample-data.json');
+        const jsonData = fs.readFileSync(dataPath, 'utf8');
+        return JSON.parse(jsonData);
+    } catch (error) {
+        console.error('Failed to load or parse sample data:', error);
+        return [];
+    }
 };
 
-// Controller function to get all clinical trials
+// Get all clinical trials
 exports.getAllTrials = (req, res) => {
     try {
-        const sampleData = loadSampleData();
-        res.json(sampleData);
+        const data = loadSampleData();
+        res.status(200).json(data);
     } catch (error) {
-        console.error('Error loading sample data:', error);
         res.status(500).json({ message: 'Error loading data' });
     }
 };
 
-// Controller function to get a specific trial by ID
+// Get a clinical trial by ID (nctId)
 exports.getTrialById = (req, res) => {
-    const trialId = req.params.id;
-    const sampleData = loadSampleData();
-    const trial = sampleData.find(t => t.nctId === trialId);
-    if (trial) {
-        res.json(trial);
-    } else {
-        res.status(404).json({ message: 'Trial not found' });
+    try {
+        const data = loadSampleData();
+        const trialId = req.params.id;
+        const trial = data.find(t => t.nctId === trialId);
+        if (trial) {
+            res.status(200).json(trial);
+        } else {
+            res.status(404).json({ message: 'Trial not found' });
+        }
+    } catch (error) {
+        res.status(500).json({ message: 'Error loading data' });
     }
 };
 
-// Controller function to filter trials based on query parameters
+// Filter trials by phase and/or location
 exports.filterTrials = (req, res) => {
-    const { phase, location } = req.query;
-    const sampleData = loadSampleData();
-    let filteredTrials = sampleData;
+    try {
+        const data = loadSampleData();
+        const { phase, location } = req.query;
 
-    console.log('Initial Sample Data:', sampleData);
+        let filtered = data;
 
-    if (phase) {
-        const normalizedPhase = phase.toLowerCase();
-        filteredTrials = filteredTrials.filter(trial => 
-            Array.isArray(trial.phases) && trial.phases.some(p => p.toLowerCase() === normalizedPhase)
-        );
-        console.log('Filtered Trials after Phase Filter:', filteredTrials);
+        if (phase) {
+            const phaseNormalized = phase.toLowerCase();
+            filtered = filtered.filter(trial =>
+                Array.isArray(trial.phases) &&
+                trial.phases.some(p => p.toLowerCase() === phaseNormalized)
+            );
+        }
+
+        if (location) {
+            const locationNormalized = location.toLowerCase();
+            filtered = filtered.filter(trial =>
+                Array.isArray(trial.locations) &&
+                trial.locations.some(loc => loc.toLowerCase() === locationNormalized)
+            );
+        }
+
+        res.status(200).json(filtered);
+    } catch (error) {
+        res.status(500).json({ message: 'Error filtering data' });
     }
-
-    if (location) {
-        const normalizedLocation = location.toLowerCase();
-        filteredTrials = filteredTrials.filter(trial => 
-            Array.isArray(trial.locations) && trial.locations.some(loc => loc.toLowerCase() === normalizedLocation)
-        );
-        console.log('Filtered Trials after Location Filter:', filteredTrials);
-    } 
-
-    console.log('Final Filtered Trials:', filteredTrials);
-
-    res.json(filteredTrials);
 };
-
