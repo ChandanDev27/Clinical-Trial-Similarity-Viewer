@@ -1,8 +1,9 @@
 const fs = require('fs');
 const path = require('path');
 const { AppError, handleError } = require('../utils/errorUtils');
+const _ = require('lodash');
 
-// Caching and file paths
+// Key Data Structures
 let cachedData = null;
 let lastModified = null;
 const dataPath = path.join(__dirname, '../data/sample-data.json');
@@ -48,7 +49,7 @@ const countryCoordinates = {
 };
 
 
-// Country → Region mapping
+// country to region mapping
 const countryToRegion = {
     'Austria': 'Europe', 'Belgium': 'Europe', 'Croatia': 'Europe', 'Czechia': 'Europe',
     'Estonia': 'Europe', 'Finland': 'Europe', 'France': 'Europe', 'Germany': 'Europe',
@@ -62,71 +63,7 @@ const countryToRegion = {
     'Australia': 'Oceania', 'Taiwan': 'Asia', 'Unknown': 'Unknown'
 };
 
-const validatePaginationParams = (page, limit) => {
-    const pageNum = parseInt(page);
-    const limitNum = parseInt(limit);
-    
-    if (isNaN(pageNum)) {
-        throw new AppError('INVALID_FILTER', { 
-            details: `Invalid page parameter: ${page}. Must be a number`,
-            statusCode: 400
-        });
-    }
-    
-    if (pageNum < 1) {
-        throw new AppError('INVALID_FILTER', { 
-            details: `Page must be ≥ 1 (received: ${pageNum})`,
-            statusCode: 400
-        });
-    }
-    
-    if (isNaN(limitNum)) {
-        throw new AppError('INVALID_FILTER', { 
-            details: `Invalid limit parameter: ${limit}. Must be a number`,
-            statusCode: 400
-        });
-    }
-    
-    if (limitNum < 1) {
-        throw new AppError('INVALID_FILTER', { 
-            details: `Limit must be ≥ 1 (received: ${limitNum})`,
-            statusCode: 400
-        });
-    }
-
-    const MAX_LIMIT = 1000;
-    if (limitNum > MAX_LIMIT) {
-        throw new AppError('INVALID_FILTER', {
-            details: `Limit cannot exceed ${MAX_LIMIT}`,
-            statusCode: 400
-        });
-    }
-    
-    return { pageNum, limitNum };
-};
-
-const validateSortParams = (sortBy, sortOrder) => {
-    const validSortFields = [
-        'similarity_score', 'nctId', 'sponsorType', 
-        'enrollmentCount', 'startDate', 'endDate', 
-        'locations', 'phases'
-    ];
-    
-    const validatedSortBy = validSortFields.includes(sortBy) 
-        ? sortBy 
-        : 'similarity_score';
-        
-    const validatedSortOrder = ['asc', 'desc'].includes(sortOrder.toLowerCase()) 
-        ? sortOrder.toLowerCase() 
-        : 'desc';
-    
-    return { 
-        sortBy: validatedSortBy, 
-        sortOrder: validatedSortOrder 
-    };
-};
-
-// Helper function for percentiles
+// Percentile calculation logic
 const percentile = (arr, p) => {
     if (!arr.length) return 0;
     const sorted = [...arr].sort((a, b) => a - b);
@@ -140,7 +77,7 @@ const percentile = (arr, p) => {
     }
 };
 
-// Create histogram bins
+// Histogram bin creation logic
 const createBins = (values, binSize) => {
     const bins = {};
     values.forEach(value => {
@@ -152,7 +89,9 @@ const createBins = (values, binSize) => {
     return bins;
 };
 
-// Load trial data with cache
+// Data Management Functions
+
+// Cached data loading with file system checks
 const loadDataWithCache = () => {
     try {
         const stats = fs.statSync(dataPath);
@@ -168,7 +107,7 @@ const loadDataWithCache = () => {
     }
 };
 
-// Load trial selections
+ // Load selected trials from file
 const loadSelections = () => {
     try {
         if (fs.existsSync(selectionsPath)) {
@@ -180,7 +119,7 @@ const loadSelections = () => {
     }
 };
 
-// Save selections to file
+// Persist selections to file
 const saveSelectionsToFile = (selections) => {
     try {
         fs.writeFileSync(selectionsPath, JSON.stringify(Array.from(selections)));
@@ -189,7 +128,7 @@ const saveSelectionsToFile = (selections) => {
     }
 };
 
-// Process each trial (fixing enrollmentment typo)
+/// Data normalization and cleanup
 const processTrial = (trial) => {
     const { enrollmentment, ...rest } = trial.eligibilityValues ?? {};
     return {
@@ -202,24 +141,170 @@ const processTrial = (trial) => {
     };
 };
 
-// Validate trial structure
+// Validate required trial fields
 const validateTrial = (trial) => {
     const requiredFields = ['nctId', 'similarity_score', 'phases', 'locations', 'sponsorType'];
     return requiredFields.every(field => trial[field] !== undefined);
 };
 
-// Trial selections (in-memory + file)
+// State Management
 let selectedTrials = loadSelections();
 
-// Add selection status to trial data
+// Enhance trials with selection status
 const addSelectionStatus = (trials) => {
     return trials.map(trial => ({
         ...trial,
         isSelected: selectedTrials.has(trial.nctId)
     }));
 };
+// Helper functions
 
-// controllers/trialsController.js
+// Count trials by phase
+const countByPhase = (trials) => {
+  return trials.reduce((acc, trial) => {
+    if (trial.phases) {
+      trial.phases.forEach(phase => {
+        acc[phase] = (acc[phase] || 0) + 1;
+      });
+    }
+    return acc;
+  }, {});
+};
+
+// Count trials by region
+const countByRegion = (trials) => {
+  return trials.reduce((acc, trial) => {
+    if (trial.locations) {
+      trial.locations.forEach(location => {
+        const region = countryToRegion[location] || 'Unknown';
+        acc[region] = (acc[region] || 0) + 1;
+      });
+    }
+    return acc;
+  }, {});
+};
+
+// Return available sort function
+const getAvailableSortFields = () => {
+  return [
+    { value: 'similarity_score', label: 'Similarity Score' },
+    { value: 'nctId', label: 'Trial ID' },
+    { value: 'sponsorType', label: 'Sponsor' },
+    { value: 'enrollmentCount', label: 'Enrollment Count' },
+    { value: 'startDate', label: 'Start Date' },
+    { value: 'endDate', label: 'End Date' },
+    { value: 'locations', label: 'Location Count' },
+    { value: 'phases', label: 'Phase' }
+  ];
+};
+
+// Get unique phase options 
+const getPhaseOptions = (trials) => {
+  const phaseSet = new Set();
+  trials.forEach(trial => {
+    if (trial.phases) {
+      trial.phases.forEach(phase => phaseSet.add(phase));
+    }
+  });
+  return Array.from(phaseSet).map(phase => ({
+    value: phase,
+    label: phase.charAt(0).toUpperCase() + phase.slice(1).toLowerCase()
+  }));
+};
+
+// Get unique location options
+const getLocationOptions = (trials) => {
+  const locationSet = new Set();
+  trials.forEach(trial => {
+    if (trial.locations) {
+      trial.locations.forEach(loc => {
+        if (loc && loc !== 'Unknown') locationSet.add(loc);
+      });
+    }
+  });
+  return Array.from(locationSet).map(location => ({
+    value: location,
+    label: location
+  }));
+};
+
+// Get color codding for region 
+const getRegionColor = (region) => {
+    const colors = {
+        'Europe': '#8884d8',
+        'Americas': '#82ca9d',
+        'Asia': '#ffc658',
+        'Africa': '#ff8042',
+        'Oceania': '#0088FE',
+        'Unknown': '#FFBB28'
+    };
+    return colors[region] || '#8884d8';
+};
+
+const sanitizeInput = (input) => {
+    if (input === null || input === undefined) return '';
+    return input.toString().replace(/[^a-zA-Z0-9-_]/g, '');
+};
+
+// Similarity Analysis
+const calculateSimilarityGroups = (trials, threshold = 0.85) => {
+    if (!trials.length) return [];
+
+    const sortedTrials = [...trials].sort((a, b) => b.similarity_score - a.similarity_score);
+    
+    const groups = [];
+    const usedIds = new Set();
+    
+    sortedTrials.forEach(trial => {
+        if (usedIds.has(trial.nctId)) return;
+        
+        const group = [trial];
+        usedIds.add(trial.nctId);
+
+        sortedTrials.forEach(otherTrial => {
+            if (!usedIds.has(otherTrial.nctId) && 
+                areTrialsSimilar(trial, otherTrial, threshold)) {
+                group.push(otherTrial);
+                usedIds.add(otherTrial.nctId);
+            }
+        });
+        
+        if (group.length > 1) {
+            groups.push({
+                id: `group-${groups.length + 1}`,
+                trials: group,
+                averageScore: group.reduce((sum, t) => sum + t.similarity_score, 0) / group.length,
+                representativeTrial: findRepresentativeTrial(group)
+            });
+        }
+    });
+    
+    return groups;
+};
+
+const areTrialsSimilar = (trial1, trial2, threshold) => {
+    const scoreDiff = Math.abs(trial1.similarity_score - trial2.similarity_score);
+    const phaseMatch = trial1.phases.some(p => trial2.phases.includes(p));
+    const sponsorMatch = trial1.sponsorType === trial2.sponsorType;
+    
+    return (scoreDiff < (100 * (1 - threshold)) && phaseMatch && sponsorMatch);
+};
+
+const findRepresentativeTrial = (trials) => {
+    const sorted = [...trials].sort((a, b) => a.similarity_score - b.similarity_score);
+    return sorted[Math.floor(sorted.length / 2)];
+};
+// Controller function 
+
+/**
+ * Retrieves paginated and filtered list of clinical trials
+ * @param {number} page - Page number (default: 1)
+ * @param {number} limit - Items per page (default: 10)
+ * @param {string} sortBy - Field to sort by
+ * @param {string} sortOrder - 'asc' or 'desc'
+ * @returns {Object} Paginated trial data with metadata
+ */
+// Enhanced list view with pagination, sorting, filtering
 const getAllTrials = (req, res) => {
   try {
     const { 
@@ -232,31 +317,26 @@ const getAllTrials = (req, res) => {
       maxScore = 100
     } = req.query;
 
-    // Validate parameters
-    const { pageNum, limitNum } = validatePaginationParams(page, limit);
-    const { sortBy: validatedSortBy, sortOrder: validatedSortOrder } = validateSortParams(sortBy, sortOrder);
-    
-    // Validate score range
+    const pageNum = parseInt(page);
+    const limitNum = parseInt(limit);
     const minScoreNum = parseFloat(minScore);
     const maxScoreNum = parseFloat(maxScore);
-    if (isNaN(minScoreNum)) {
-      throw new AppError('INVALID_FILTER', { details: 'Minimum score must be a number' });
-    }
-    if (isNaN(maxScoreNum)) {
-      throw new AppError('INVALID_FILTER', { details: 'Maximum score must be a number' });
-    }
-    if (minScoreNum > maxScoreNum) {
-      throw new AppError('INVALID_FILTER', { details: 'Minimum score cannot be greater than maximum score' });
-    }
+
+    const validSortFields = [
+      'similarity_score', 'nctId', 'sponsorType', 
+      'enrollmentCount', 'startDate', 'endDate', 
+      'locations', 'phases'
+    ];
+    const validatedSortBy = validSortFields.includes(sortBy) 
+      ? sortBy 
+      : 'similarity_score';
+    const validatedSortOrder = ['asc', 'desc'].includes(sortOrder.toLowerCase()) 
+      ? sortOrder.toLowerCase() 
+      : 'desc';
 
     let data = loadDataWithCache();
-
-    // Apply basic filtering
     let filteredData = data.filter(trial => {
-      // Score range filter
       const scoreMatch = trial.similarity_score >= minScoreNum && trial.similarity_score <= maxScoreNum;
-      
-      // Search filter (case-insensitive)
       const searchLower = search.toLowerCase();
       const searchMatch = 
         trial.nctId.toLowerCase().includes(searchLower) ||
@@ -268,9 +348,7 @@ const getAllTrials = (req, res) => {
       return scoreMatch && searchMatch;
     });
 
-    // Sorting
     filteredData.sort((a, b) => {
-      // Handle different sort fields
       let valA, valB;
       
       if (validatedSortBy === 'locations') {
@@ -283,36 +361,28 @@ const getAllTrials = (req, res) => {
         valA = a[validatedSortBy];
         valB = b[validatedSortBy];
       }
-
-      // Handle null/undefined values
+      
       if (valA == null) return 1;
       if (valB == null) return -1;
       
-      // Handle different value types
       if (typeof valA === 'string' && typeof valB === 'string') {
         return validatedSortOrder === 'asc' 
           ? valA.localeCompare(valB) 
           : valB.localeCompare(valA);
       }
       
-      // Numeric comparison
       return validatedSortOrder === 'asc' 
         ? valA - valB 
         : valB - valA;
     });
 
-    // Pagination
     const totalItems = filteredData.length;
     const totalPages = Math.ceil(totalItems / limitNum);
     const paginatedData = filteredData.slice(
       (pageNum - 1) * limitNum,
       pageNum * limitNum
     );
-
-    // Add selection status
     const enrichedData = addSelectionStatus(paginatedData);
-
-    // Calculate summary stats
     const scores = filteredData.map(t => t.similarity_score);
     const scoreStats = {
       min: Math.min(...scores),
@@ -356,78 +426,11 @@ const getAllTrials = (req, res) => {
   }
 };
 
-// Helper functions
-const countByPhase = (trials) => {
-  return trials.reduce((acc, trial) => {
-    if (trial.phases) {
-      trial.phases.forEach(phase => {
-        acc[phase] = (acc[phase] || 0) + 1;
-      });
-    }
-    return acc;
-  }, {});
-};
-
-const countByRegion = (trials) => {
-  return trials.reduce((acc, trial) => {
-    if (trial.locations) {
-      trial.locations.forEach(location => {
-        const region = countryToRegion[location] || 'Unknown';
-        acc[region] = (acc[region] || 0) + 1;
-      });
-    }
-    return acc;
-  }, {});
-};
-
-const getAvailableSortFields = () => {
-  return [
-    { value: 'similarity_score', label: 'Similarity Score' },
-    { value: 'nctId', label: 'Trial ID' },
-    { value: 'sponsorType', label: 'Sponsor' },
-    { value: 'enrollmentCount', label: 'Enrollment Count' },
-    { value: 'startDate', label: 'Start Date' },
-    { value: 'endDate', label: 'End Date' },
-    { value: 'locations', label: 'Location Count' },
-    { value: 'phases', label: 'Phase' }
-  ];
-};
-
-const getPhaseOptions = (trials) => {
-  const phaseSet = new Set();
-  trials.forEach(trial => {
-    if (trial.phases) {
-      trial.phases.forEach(phase => phaseSet.add(phase));
-    }
-  });
-  return Array.from(phaseSet).map(phase => ({
-    value: phase,
-    label: phase.charAt(0).toUpperCase() + phase.slice(1).toLowerCase()
-  }));
-};
-
-const getLocationOptions = (trials) => {
-  const locationSet = new Set();
-  trials.forEach(trial => {
-    if (trial.locations) {
-      trial.locations.forEach(loc => {
-        if (loc && loc !== 'Unknown') locationSet.add(loc);
-      });
-    }
-  });
-  return Array.from(locationSet).map(location => ({
-    value: location,
-    label: location
-  }));
-};
-
-// Get trial by ID
+// Get single trial by ID with normalization
 const getTrialById = (req, res) => {
     try {
         const data = loadDataWithCache();
-        const trialId = req.params.id;
-        
-        // Normalize the ID by removing any non-alphanumeric characters and uppercase
+        const trialId = sanitizeInput(req.params.id);
         const normalizedId = trialId.replace(/[^a-zA-Z0-9]/g, '').toUpperCase();
         const trial = data.find(t => {
             const trialIdNormalized = t.nctId?.replace(/[^a-zA-Z0-9]/g, '').toUpperCase();
@@ -447,21 +450,20 @@ const getTrialById = (req, res) => {
     }
 };
 
-// Filter trials by criteria
+// Comprehensive filtering endpoint
 const filterTrials = (req, res) => {
     try {
         const {
             phase, location, similarity_score, sponsor,
-            startDate, endDate, hasResults,
+            startDate, endDate, hasResults, search,
             page = 1, limit = 10, sortBy, sortOrder = 'asc'
         } = req.query;
         const data = loadDataWithCache();
 
-        console.log('Filter parameters:', req.query); // Debug logging
+        console.log('Filter parameters:', req.query);
 
         let filtered = [...data];
 
-        // Apply filters
         if (similarity_score) {
             const minScore = Number(similarity_score);
             if (!isNaN(minScore)) {
@@ -470,8 +472,8 @@ const filterTrials = (req, res) => {
         }
 
         if (phase) {
-            const phaseUpper = phase.toUpperCase();
-            console.log('Phase filter:', { input: phase, normalized: phaseUpper }); // Debug
+            const phaseUpper = sanitizeInput(phase).toUpperCase();
+            console.log('Phase filter:', { input: phase, normalized: phaseUpper });
             
             filtered = filtered.filter(trial => {
                 if (!trial.phases) return false;
@@ -486,20 +488,31 @@ const filterTrials = (req, res) => {
                 );
             });
             
-            console.log('Post-phase filter count:', filtered.length); // Debug
+            console.log('Post-phase filter count:', filtered.length);
         }
 
         if (location) {
-            const locationLower = location.toLowerCase();
+            const locationLower = sanitizeInput(location).toLowerCase();
             filtered = filtered.filter(trial =>
-                trial.locations.some(loc => loc?.toLowerCase() === locationLower)
+                trial.locations.some(loc => loc && sanitizeInput(loc).toLowerCase() === locationLower)
             );
         }
 
         if (sponsor) {
-            const sponsorLower = sponsor.toLowerCase();
+            const sponsorLower = sanitizeInput(sponsor).toLowerCase();
             filtered = filtered.filter(t =>
-                t.sponsorType?.toLowerCase().includes(sponsorLower)
+                t.sponsorType && sanitizeInput(t.sponsorType).toLowerCase().includes(sponsorLower)
+            );
+        }
+
+        if (search) {
+            const searchLower = sanitizeInput(search).toLowerCase();
+            filtered = filtered.filter(trial => 
+                (trial.nctId && sanitizeInput(trial.nctId).toLowerCase().includes(searchLower)) ||
+                (trial.sponsorType && sanitizeInput(trial.sponsorType).toLowerCase().includes(searchLower)) ||
+                (trial.locations && trial.locations.some(loc => 
+                    loc && sanitizeInput(loc).toLowerCase().includes(searchLower)
+                ))
             );
         }
 
@@ -535,7 +548,6 @@ const filterTrials = (req, res) => {
             });
         }
 
-        // Sorting
         if (sortBy) {
             filtered.sort((a, b) => {
                 const valA = a[sortBy];
@@ -548,7 +560,6 @@ const filterTrials = (req, res) => {
             });
         }
 
-        // Pagination
         const pageNum = Math.max(1, parseInt(page));
         const limitNum = Math.max(1, parseInt(limit));
         const paginated = addSelectionStatus(
@@ -581,18 +592,12 @@ const filterTrials = (req, res) => {
     }
 };
 
-// Score View Data
+// Score analysis with distribution stats
 const getScoreViewData = (req, res) => {
     try {
         const data = loadDataWithCache();
-        
-        // Sort by similarity score (descending)
         const sortedData = [...data].sort((a, b) => b.similarity_score - a.similarity_score);
-        
-        // Add selection status
         const dataWithSelection = addSelectionStatus(sortedData);
-
-        // Score analysis metrics
         const scores = data.map(t => t.similarity_score);
         const scoreStats = {
             average: scores.reduce((sum, score) => sum + score, 0) / scores.length,
@@ -614,12 +619,10 @@ const getScoreViewData = (req, res) => {
     }
 };
 
-// Dashboard data
+// Complete dashboard data aggregation
 const getDashboardData = (req, res) => {
     try {
         const data = loadDataWithCache();
-
-        // Enhanced geographic data
         const countries = data.flatMap(t => t.locations);
         const uniqueCountries = [...new Set(countries)];
         
@@ -633,17 +636,39 @@ const getDashboardData = (req, res) => {
             };
         });
 
+        const enhancedEligibilityDistribution = {
+            studyDuration: createBins(data.map(t => t.eligibilityValues.studyDuration), 10),
+            noOfLocations: createBins(data.map(t => t.eligibilityValues.locations), 10),
+            enrollment: createBins(data.map(t => t.eligibilityValues.enrollment), 10),
+            countries: createBins(data.map(t => t.eligibilityValues.countries), 5),
+            timeline: createBins(data.map(t => t.eligibilityValues.timelines), 10),
+            pregnant: createBins(data.map(t => t.eligibilityValues.pregnant), 10),
+            age: createBins(data.map(t => t.eligibilityValues.age), 10),
+            egfr: createBins(data.map(t => t.eligibilityValues.egfr), 10),
+            hbac: createBins(data.map(t => t.eligibilityValues.hba1c), 10),
+            bmi: createBins(data.map(t => t.eligibilityValues.bmi), 10)
+        };
+
+        const regionData = Object.entries(
+            geographicData.reduce((acc, {region, count}) => {
+                acc[region] = (acc[region] || 0) + count;
+                return acc;
+            }, {})
+        ).map(([name, count]) => ({ 
+            name, 
+            value: count,
+
+            fill: getRegionColor(name)
+        }));
+
         const dashboardData = {
             phases: data.reduce((acc, t) => {
-                t.phases.forEach(p => { acc[p] = (acc[p] || 0) + 1 });
+                t.phases.forEach(p => { 
+                    acc[p] = (acc[p] || 0) + 1 
+                });
                 return acc;
             }, {}),
-            regions: Object.entries(
-                geographicData.reduce((acc, {region, count}) => {
-                    acc[region] = (acc[region] || 0) + count;
-                    return acc;
-                }, {})
-            ).map(([name, count]) => ({ name, count })),
+            regions: regionData,
             results: {
                 hasResults: data.filter(t => t.hasResults).length,
                 noResults: data.filter(t => !t.hasResults).length
@@ -653,21 +678,14 @@ const getDashboardData = (req, res) => {
                 return acc;
             }, {}),
             similarityDistribution: createBins(data.map(t => t.similarity_score), 5),
-            enrollmentDistribution: createBins(data.map(t => t.enrollmentCount).filter(e => e > 0), 50),
-            eligibilityDistribution: {
-                studyDuration: createBins(data.map(t => t.eligibilityValues.studyDuration), 10),
-                locations: createBins(data.map(t => t.eligibilityValues.locations), 10),
-                enrollment: createBins(data.map(t => t.eligibilityValues.enrollment), 10),
-                countries: createBins(data.map(t => t.eligibilityValues.countries), 5)
-            },
+            enrollmentDistribution: createBins(
+                data.map(t => t.enrollmentCount).filter(e => e > 0), 
+                50
+            ),
+            eligibilityDistribution: enhancedEligibilityDistribution,
             geographicDistribution: {
                 countries: geographicData,
-                regions: Object.entries(
-                    geographicData.reduce((acc, {region, count}) => {
-                        acc[region] = (acc[region] || 0) + count;
-                        return acc;
-                    }, {})
-                ).map(([name, count]) => ({ name, count }))
+                regions: regionData
             },
             selectedTrials: {
                 count: selectedTrials.size,
@@ -685,10 +703,37 @@ const getDashboardData = (req, res) => {
     }
 };
 
-// Eligibility field distribution
+const getSimilarTrials = (req, res) => {
+    try {
+        const { threshold = 0.85 } = req.query;
+        const data = loadDataWithCache();
+        
+        const similarGroups = calculateSimilarityGroups(data, parseFloat(threshold));
+        const enrichedGroups = similarGroups.map(group => ({
+            ...group,
+            trials: addSelectionStatus(group.trials)
+        }));
+        
+        res.json({
+            success: true,
+            data: enrichedGroups,
+            meta: {
+                totalGroups: similarGroups.length,
+                totalTrials: similarGroups.reduce((sum, group) => sum + group.trials.length, 0),
+                averageGroupSize: similarGroups.length > 0 
+                    ? similarGroups.reduce((sum, group) => sum + group.trials.length, 0) / similarGroups.length
+                    : 0
+            }
+        });
+    } catch (error) {
+        handleError(error, res);
+    }
+};
+
+// Field-specific eligibility distribution
 const getEligibilityDistribution = (req, res) => {
     try {
-        const { field } = req.params;
+        const field = sanitizeInput(req.params.field);
         const data = loadDataWithCache();
 
         if (!data[0]?.eligibilityValues?.[field]) {
@@ -706,7 +751,7 @@ const getEligibilityDistribution = (req, res) => {
     }
 };
 
-// Save selections
+// Save user selections with validation
 const saveSelections = (req, res) => {
     try {
         const { trialIds } = req.body;
@@ -714,8 +759,16 @@ const saveSelections = (req, res) => {
             throw new AppError('INVALID_SELECTION');
         }
 
+        // Sanitize all trial IDs before processing
+        const sanitizedTrialIds = trialIds.map(id => sanitizeInput(id));
         const validIds = new Set(loadDataWithCache().map(t => t.nctId));
-        selectedTrials = new Set(trialIds.filter(id => validIds.has(id)));
+        
+        // Filter to only include valid, sanitized IDs
+        selectedTrials = new Set(
+            sanitizedTrialIds.filter(id => 
+                id && validIds.has(id) && id.length > 0
+            )
+        );
 
         saveSelectionsToFile(selectedTrials);
         res.json({ 
@@ -728,7 +781,7 @@ const saveSelections = (req, res) => {
     }
 };
 
-// Get selections
+// Retrieve current selections
 const getSelections = (req, res) => {
     res.json({ 
         success: true, 
@@ -737,13 +790,13 @@ const getSelections = (req, res) => {
     });
 };
 
-// Export controllers
 module.exports = {
     getAllTrials,
     getTrialById,
     filterTrials,
     getDashboardData,
     getScoreViewData,
+    getSimilarTrials,
     getEligibilityDistribution,
     saveSelections,
     getSelections

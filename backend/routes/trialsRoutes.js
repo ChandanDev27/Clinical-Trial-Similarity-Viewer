@@ -1,27 +1,21 @@
 const express = require('express');
 const router = express.Router();
-const {
-  getAllTrials,
-  getTrialById,
-  filterTrials,
-  getDashboardData,
-  getScoreViewData,
-  getEligibilityDistribution,
-  saveSelections,
-  getSelections
-} = require('../controllers/trialsController');
+const validators = require('../middleware/validators');
+const trialsController = require('../controllers/trialsController');
 
-// Filter routes (handle with and without trailing slash)
-router.get(['/filter', '/filter/'], filterTrials);
-router.get('/', getAllTrials);
-router.get('/test', (req, res) => {
-  res.json({ message: 'Route test successful' });
-});
-router.get('/dashboard', getDashboardData);
-router.get('/score-view', getScoreViewData);
-router.get('/eligibility/:field', getEligibilityDistribution);
-router.get('/selections', getSelections);
-router.post('/selections', saveSelections);
-router.get('/:id', getTrialById);
+// API Endpoints
+router.get(['/filter', '/filter/'], validators.validateQueryParams, trialsController.filterTrials);
+router.get('/', validators.validateQueryParams, trialsController.getAllTrials);
+router.get('/dashboard', validators.validateQueryParams, trialsController.getDashboardData);
+router.get('/score-view', validators.validateQueryParams, trialsController.getScoreViewData);
+router.get('/similar-trials', validators.validateQueryParams, trialsController.getSimilarTrials);
+router.get('/eligibility/:field', validators.validateEligibilityField, trialsController.getEligibilityDistribution);
+router.route('/selections')
+  .get(trialsController.getSelections)
+  .post(trialsController.saveSelections);
+router.get('/:id', validators.validateTrialId, trialsController.getTrialById);
+
+// Test endpoint
+router.get('/test', (req, res) => res.json({ message: 'Route test successful' }));
 
 module.exports = router;

@@ -3,7 +3,7 @@ const { AppError } = require('../utils/errorUtils');
 const errorHandler = (err, req, res, next) => {
     console.error(err.stack);
 
-    // Special case: Filter routes should never return errors for empty results
+    // Handle empty filter results specially
     if (req.originalUrl.includes('/filter')) {
         return res.status(200).json({
             success: true,
@@ -17,7 +17,7 @@ const errorHandler = (err, req, res, next) => {
         });
     }
 
-    // Existing error handling
+    // Handle different error types
     if (err.name === 'ValidationError') {
         return res.status(400).json({
             message: 'Validation Error',
@@ -26,45 +26,32 @@ const errorHandler = (err, req, res, next) => {
     }
 
     if (err instanceof AppError) {
-        return res.status(err.statusCode).json({
+        const response = {
             success: false,
             code: err.code,
-            message: err.message,
-            ...(process.env.NODE_ENV === 'development' && {
-                details: err.details,
-                stack: err.stack
-            })
-        });
+            message: err.message
+        };
+        
+        if (process.env.NODE_ENV === 'development') {
+            response.details = err.details;
+            response.stack = err.stack;
+        }
+        
+        return res.status(err.statusCode).json(response);
     }
 
-    res.status(500).json({
+    // Fallback for unhandled errors
+    const response = {
         success: false,
-        message: 'Internal Server Error',
-        ...(process.env.NODE_ENV === 'development' && { error: err.message, stack: err.stack })
-    });
-};
-const validateQueryParams = (req, res, next) => {
-    const { page = 1, limit = 10 } = req.query;
+        message: 'Internal Server Error'
+    };
     
-    if (isNaN(parseInt(page))) {
-        return res.status(400).json({
-            success: false,
-            code: 'INVALID_PAGE',
-            message: 'Page must be a number ≥ 1'
-        });
+    if (process.env.NODE_ENV === 'development') {
+        response.error = err.message;
+        response.stack = err.stack;
     }
     
-    if (isNaN(parseInt(limit))) {
-        return res.status(400).json({
-            success: false,
-            code: 'INVALID_LIMIT',
-            message: 'Limit must be a number ≥ 1'
-        });
-    }
-    
-    next();
+    res.status(500).json(response);
 };
-
-router.get('/', validateQueryParams, getAllTrials);
 
 module.exports = errorHandler;
