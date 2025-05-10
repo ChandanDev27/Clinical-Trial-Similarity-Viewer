@@ -427,18 +427,26 @@ const getAllTrials = (req, res) => {
 };
 
 // Get single trial by ID with normalization
-const getTrialById = (req, res) => {
+const getTrialById = (req, res, next) => {
     try {
         const data = loadDataWithCache();
-        const trialId = sanitizeInput(req.params.id);
-        const normalizedId = trialId.replace(/[^a-zA-Z0-9]/g, '').toUpperCase();
-        const trial = data.find(t => {
-            const trialIdNormalized = t.nctId?.replace(/[^a-zA-Z0-9]/g, '').toUpperCase();
-            return trialIdNormalized === normalizedId;
-        });
+        const trialId = req.params.id;
 
+        if (!trialId) {
+            throw new AppError('INVALID_TRIAL_ID', {
+                message: 'Trial ID is required',
+                statusCode: 400
+            });
+        }
+
+        const trial = data.find(t => t.nctId === trialId);
+        
         if (!trial) {
-            throw new AppError('TRIAL_NOT_FOUND');
+            throw new AppError('TRIAL_NOT_FOUND', {
+                message: `Trial with ID ${trialId} not found`,
+                statusCode: 404,
+                details: { searchedId: trialId }
+            });
         }
 
         res.status(200).json({ 
@@ -446,7 +454,7 @@ const getTrialById = (req, res) => {
             data: addSelectionStatus([trial])[0] 
         });
     } catch (error) {
-        handleError(error, res);
+        next(error);
     }
 };
 

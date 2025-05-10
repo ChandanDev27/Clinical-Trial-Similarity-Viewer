@@ -14,16 +14,17 @@ app.use(cors());
 app.use(express.json());
 app.use(logger);
 
+// API routes
+app.use('/api/trials', trialsRoutes);
+
+// Error handling
+app.use(errorHandler);
+
+
 // Health check endpoint
 app.get('/health', (req, res) => {
   res.status(200).json({ status: 'ok' });
 });
-
-// API routes
-app.use('/api/trials', trialsRoutes);
-
-// Error handling (must be last middleware)
-app.use(errorHandler);
 
 // Start server
 const server = app.listen(port, () => {

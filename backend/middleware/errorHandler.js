@@ -1,9 +1,34 @@
-const { AppError } = require('../utils/errorUtils');
+const { AppError, errorMessages } = require('../utils/errorUtils');
 
 const errorHandler = (err, req, res, next) => {
-    console.error(err.stack);
 
-    // Handle empty filter results specially
+    const errorCode = err.code || 'UNKNOWN_ERROR';
+
+    // Build response - PRESERVE THE ORIGINAL CODE
+    const response = {
+        success: false,
+        code: errorCode,
+        message: err.message || 'Internal Server Error'
+    };
+
+    // Add details if they exist
+    if (err.details) {
+        response.details = err.details;
+    }
+
+    // Development only fields
+    if (process.env.NODE_ENV === 'development') {
+        response.stack = err.stack;
+        if (!err.isOperational) {
+            response.internalError = {
+                name: err.name,
+                message: err.message,
+                stack: err.stack
+            };
+        }
+    }
+
+    // Special case for empty filter results
     if (req.originalUrl.includes('/filter')) {
         return res.status(200).json({
             success: true,
@@ -17,41 +42,13 @@ const errorHandler = (err, req, res, next) => {
         });
     }
 
-    // Handle different error types
-    if (err.name === 'ValidationError') {
-        return res.status(400).json({
-            message: 'Validation Error',
-            errors: err.errors
-        });
-    }
+    // Determine status code
+    const statusCode = err.statusCode || 
+                      (errorMessages[errorCode] && errorMessages[errorCode].statusCode) || 
+                      500;
 
-    if (err instanceof AppError) {
-        const response = {
-            success: false,
-            code: err.code,
-            message: err.message
-        };
-        
-        if (process.env.NODE_ENV === 'development') {
-            response.details = err.details;
-            response.stack = err.stack;
-        }
-        
-        return res.status(err.statusCode).json(response);
-    }
-
-    // Fallback for unhandled errors
-    const response = {
-        success: false,
-        message: 'Internal Server Error'
-    };
-    
-    if (process.env.NODE_ENV === 'development') {
-        response.error = err.message;
-        response.stack = err.stack;
-    }
-    
-    res.status(500).json(response);
+    // 8. Send response
+    res.status(statusCode).json(response);
 };
 
 module.exports = errorHandler;
