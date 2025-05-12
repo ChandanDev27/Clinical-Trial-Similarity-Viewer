@@ -4,3 +4,5 @@ const sponsorLogos = {
     "Novartis": "/images/img_image_7.png",
     "Biogen": "/images/img_image_8.png"
 };
+
+export default sponsorLogos;

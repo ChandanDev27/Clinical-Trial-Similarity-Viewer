@@ -79,48 +79,63 @@ const TrialsTable = ({ trials, selectedTrials, onTrialSelect, onSelectAll }) => 
         </thead>
         <tbody>
           {trials.map((trial) => (
-            <tr key={trial.id} className="bg-[#f4f5fa]">
-              <td className="p-4">
+            <tr key={trial.nctId} className="bg-[#f4f5fa]">
+              <td className="p-4">  
                 <div className="flex justify-center">
                   <div 
-                    className={`w-4 h-4 rounded flex items-center justify-center cursor-pointer ${selectedTrials.includes(trial.id) ? 'bg-[#652995]' : 'border border-[#e9eaef]'}`}
-                    onClick={() => onTrialSelect(trial.id)}
+                    className={`w-4 h-4 rounded flex items-center justify-center cursor-pointer ${selectedTrials.includes(trial.nctId) ? 'bg-[#652995]' : 'border border-[#e9eaef]'}`}
+                    onClick={() => onTrialSelect(trial.nctId)}
                   >
-                    {selectedTrials.includes(trial.id) && (
+                    {selectedTrials.includes(trial.nctId) && (
                       <img src="/images/img_vector.svg" alt="Selected" className="w-2 h-2" />
                     )}
                   </div>
                 </div>
               </td>
-              <td className="p-4 text-sm text-[#232323]">{trial.id}</td>
-              <td className="p-4 text-sm text-[#232323]">{trial.locations}</td>
-              <td className="p-4 text-sm text-[#232323]">{trial.enrollmentCount}</td>
-              <td className="p-4 text-sm text-[#232323]">{trial.phase}</td>
-              <td className="flex items-center gap-2">
-                {sponsorLogos[trial.sponsorType] && (
-                  <img src={sponsorLogos[trial.sponsorType]} alt={trial.sponsorType} className="w-6 h-6" />
-                )}
-                <span>{trial.sponsorType}</span> {/* This name comes from backend */}
-              </td>
-            </tr>
-          ))}
-        </tbody>
-      </table>
+             <td className="p-4 text-sm text-[#232323]">{trial.nctId}</td>
+             <td className="p-4 text-sm text-[#232323]">
+                {trial.locations?.join(', ') || 'N/A'}
+             </td>
+             <td className="p-4 text-sm text-[#232323]">
+                {trial.enrollmentCount || 'N/A'}
+             </td>
+             <td className="p-4 text-sm text-[#232323]">
+                {trial.phases?.join(', ') || 'N/A'}
+             </td>
+             <td className="flex items-center gap-2 p-4">
+                {sponsorLogos[trial.sponsorType] ? (
+                <img 
+                  src={sponsorLogos[trial.sponsorType]} 
+                  alt={trial.sponsorType}
+                  className="w-6 h-6 object-contain"
+                />
+              ) : (
+                <div className="w-6 h-6 bg-gray-200 rounded-full flex items-center justify-center">
+                  <span className="text-xs text-gray-500">
+                    {trial.sponsorType.charAt(0)}
+                  </span>
+                </div>
+              )}
+              <span className="text-sm text-[#232323]">
+                {trial.sponsorType}
+              </span>
+            </td>
+          </tr>
+        ))}
+      </tbody>
+    </table>
     </div>
   );
 };
-
+          
 TrialsTable.propTypes = {
   trials: PropTypes.arrayOf(
     PropTypes.shape({
-      id: PropTypes.string.isRequired,
-      locations: PropTypes.string.isRequired,
+      nctId: PropTypes.string.isRequired,
+      locations: PropTypes.arrayOf(PropTypes.string).isRequired,
       enrollmentCount: PropTypes.number.isRequired,
-      phase: PropTypes.string.isRequired,
-      sponsor: PropTypes.shape({
-        name: PropTypes.string,
-        logo: PropTypes.string,
-      }).isRequired,
+      phases: PropTypes.arrayOf(PropTypes.string).isRequired,
+      sponsorType: PropTypes.string.isRequired,
     })
   ).isRequired,
   selectedTrials: PropTypes.arrayOf(PropTypes.string).isRequired,

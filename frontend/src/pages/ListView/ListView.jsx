@@ -1,6 +1,7 @@
 import React, { useState, useEffect, useCallback } from 'react';
 import TrialsTable from './TrialsTable';
-import sponsorLogos from '../../sponsorLogos'; // Import sponsor logos
+import sponsorLogos from '../../sponsorLogos';
+import { fetchTrials, saveSelections } from '../../services/api';
 
 const ListView = () => {
   const [trials, setTrials] = useState([]);
@@ -10,22 +11,34 @@ const ListView = () => {
   const [viewMode, setViewMode] = useState('list');
   const [currentPage, setCurrentPage] = useState(1);
   const [itemsPerPage] = useState(8);
+  const [totalPages, setTotalPages] = useState(1);
+  const [totalItems, setTotalItems] = useState(0);
 
   useEffect(() => {
     const fetchTrials = async () => {
       try {
         setLoading(true);
-        const response = await fetch(`/api/trials?page=${currentPage}&limit=${itemsPerPage}`);
+        const response = await fetch(
+          `/api/trials?page=${currentPage}&limit=${itemsPerPage}`
+        );
         
         if (!response.ok) {
           throw new Error(`HTTP error! status: ${response.status}`);
         }
         
         const data = await response.json();
-        setTrials(data.trials || []); // Ensure fallback to empty array
+        
+        if (data.success) {
+          setTrials(data.data || []);
+          setTotalPages(data.meta.totalPages);
+          setTotalItems(data.meta.total);
+        } else {
+          throw new Error(data.message || 'Failed to fetch trials');
+        }
+        
         setError(null);
       } catch (err) {
-        setError('Failed to fetch trials');
+        setError(err.message || 'Failed to fetch trials');
         console.error('Fetch error:', err);
       } finally {
         setLoading(false);
@@ -35,20 +48,41 @@ const ListView = () => {
     fetchTrials();
   }, [currentPage, itemsPerPage]);
 
+  useEffect(() => {
+    const loadSelections = async () => {
+    const response = await fetch('/api/trials/selections');
+    const { data } = await response.json();
+    setSelectedTrials(data);
+  };
+  loadSelections();
+
+    const fetchSelections = async () => {
+      try {
+        const response = await fetch('/api/trials/selections');
+        const data = await response.json();
+        setSelectedTrials(data.data || []);
+      } catch (err) {
+        console.error('Failed to fetch selections:', err);
+      }
+    };
+    fetchSelections();
+  }, []);
+
   const handleViewChange = useCallback((view) => {
     setViewMode(view);
   }, []);
 
-  const handleTrialSelect = useCallback((trialId) => {
-    setSelectedTrials(prev => 
-      prev.includes(trialId) 
-        ? prev.filter(id => id !== trialId) 
-        : [...prev, trialId]
-    );
-  }, []);
+  const handleTrialSelect = useCallback(async (trialId) => {
+    const newSelections = selectedTrials.includes(trialId)
+      ? selectedTrials.filter(id => id !== trialId)
+      : [...selectedTrials, trialId];
+
+    await saveSelections(newSelections); // Save selections via API
+    setSelectedTrials(newSelections);
+  }, [selectedTrials]);
 
   const handleSelectAll = useCallback((isSelected) => {
-    setSelectedTrials(isSelected ? trials.map(trial => trial.id) : []);
+    setSelectedTrials(isSelected ? trials.map(trial => trial .nctId) : []);
   }, [trials]);
 
   const handlePageChange = useCallback((page) => {
@@ -92,10 +126,10 @@ const ListView = () => {
           <TrialsTable 
             trials={trials}
             selectedTrials={selectedTrials}
-            onTrialSelect={handleTrialSelect}
-            onSelectAll={handleSelectAll}
+            onTrialSelect={(trialId) => handleTrialSelect(trialId, selectedTrials, setSelectedTrials)}
+            onSelectAll={(isSelected) => handleSelectAll(isSelected, trials, setSelectedTrials)}
           />
-          
+        
           <div className="flex justify-between items-center mt-6">
             <div className="flex items-center">
               <div className="relative">
