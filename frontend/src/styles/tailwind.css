@@ -1,0 +1,81 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer base {
+  :root {
+    /* Primary Colors */
+    --primary-purple: #652995;
+    --primary-purple-light: #8a4cb8;
+    --primary-purple-dark: #4e1d73;
+    --primary-purple-bg: #f7f2fb;
+    
+    /* Text Colors */
+    --text-dark: #232323;
+    --text-gray: #6d7194;
+    --text-light: #a0a0a0;
+    
+    /* Border Colors */
+    --border-light: #e9eaef;
+    --border-medium: #d1d5db;
+    --border-transparent: #6d719419;
+    
+    /* Background Colors */
+    --bg-white: #ffffff;
+    --bg-light: #f4f5fa;
+    --bg-dropdown: #5e636614;
+  }
+}
+
+@layer utilities {
+  /* Background Color Utilities */
+  .bg-primary-purple {
+    background-color: var(--primary-purple);
+  }
+  
+  .bg-primary-purple-light {
+    background-color: var(--primary-purple-light);
+  }
+  
+  .bg-primary-purple-dark {
+    background-color: var(--primary-purple-dark);
+  }
+  
+  .bg-primary-purple-bg {
+    background-color: var(--primary-purple-bg);
+  }
+  
+  /* Text Color Utilities */
+  .text-primary-purple {
+    color: var(--primary-purple);
+  }
+  
+  .text-dark {
+    color: var(--text-dark);
+  }
+  
+  .text-gray {
+    color: var(--text-gray);
+  }
+  
+  .text-light {
+    color: var(--text-light);
+  }
+  
+  /* Border Color Utilities */
+  .border-primary-purple {
+    border-color: var(--primary-purple);
+  }
+  
+  .border-light {
+    border-color: var(--border-light);
+  }
+  
+  .border-medium {
+    border-color: var(--border-medium);
+  }
+  
+  .border-transparent {
+    border-color: var(--border-transparent);
+  }
+}

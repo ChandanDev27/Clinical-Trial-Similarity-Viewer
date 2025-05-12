@@ -203,4 +203,4 @@ Common issues:
 - **CORS errors**: Ensure frontend origin is allowed
 - **Filter issues**: Check parameter formatting (dates should be YYYY-MM-DD)
 
-For additional support, please review the server logs or contact the development team.
+For frontend implementation details, please refer to the frontend README documentation.

@@ -9,8 +9,14 @@ require('dotenv').config();
 const app = express();
 const port = process.env.PORT || 5000;
 
+// Configure CORS with dynamic origin
+app.use(cors({
+  origin: 'http://localhost:3000',
+  methods: ['GET', 'POST', 'PUT', 'DELETE'],
+  allowedHeaders: ['Content-Type']
+}));
+
 // Essential middleware stack
-app.use(cors());
 app.use(express.json());
 app.use(logger);
 
@@ -19,7 +25,6 @@ app.use('/api/trials', trialsRoutes);
 
 // Error handling
 app.use(errorHandler);
-
 
 // Health check endpoint
 app.get('/health', (req, res) => {
