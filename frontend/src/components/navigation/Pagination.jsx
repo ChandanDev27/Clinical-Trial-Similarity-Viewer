@@ -1,54 +1,25 @@
-import React, { useEffect, useState } from 'react';
+import React from 'react';
 import PropTypes from 'prop-types';
 
 const Pagination = ({ 
-  apiEndpoint, 
-  onPageChange, 
-  className = '', 
-  itemsPerPageOptions = [5, 8, 10, 15],
-  ...props 
+  currentPage,
+  itemsPerPage,
+  totalPages,
+  totalItems,
+  onPageChange,
+  onItemsPerPageChange,
+  className = '',
+  itemsPerPageOptions = [5, 8, 10, 15]
 }) => {
-  const [currentPage, setCurrentPage] = useState(1);
-  const [totalPages, setTotalPages] = useState(1);
-  const [itemsPerPage, setItemsPerPage] = useState(itemsPerPageOptions[0]);
-  const [isLoading, setIsLoading] = useState(false);
-  const [error, setError] = useState(null);
-
-  useEffect(() => {
-    const fetchPaginationData = async () => {
-      setIsLoading(true);
-      setError(null);
-      try {
-        const response = await fetch(`${apiEndpoint}?page=${currentPage}&limit=${itemsPerPage}`);
-        if (!response.ok) throw new Error('Failed to fetch pagination data');
-        const data = await response.json();
-        
-        setTotalPages(data.totalPages);
-        if (currentPage > data.totalPages) {
-          setCurrentPage(Math.max(1, data.totalPages));
-        }
-      } catch (err) {
-        console.error('Error fetching pagination data:', err);
-        setError(err.message);
-      } finally {
-        setIsLoading(false);
-      }
-    };
-
-    fetchPaginationData();
-  }, [apiEndpoint, currentPage, itemsPerPage]);
-
   const handleItemsPerPageChange = (e) => {
-    const value = Number(e.target.value);
-    setItemsPerPage(value);
-    setCurrentPage(1);
+    onItemsPerPageChange(Number(e.target.value));
   };
 
   const getPageNumbers = () => {
     if (totalPages <= 1) return [1];
     
     const pageNumbers = [];
-    const visiblePages = 3; // Number of pages to show around current page
+    const visiblePages = 3;
     
     pageNumbers.push(1);
 
@@ -65,36 +36,25 @@ const Pagination = ({
 
   const handlePrevious = () => {
     if (currentPage > 1) {
-      const newPage = currentPage - 1;
-      setCurrentPage(newPage);
-      onPageChange(newPage);
+      onPageChange(currentPage - 1);
     }
   };
 
   const handleNext = () => {
     if (currentPage < totalPages) {
-      const newPage = currentPage + 1;
-      setCurrentPage(newPage);
-      onPageChange(newPage);
+      onPageChange(currentPage + 1);
     }
   };
 
-  if (totalPages <= 1 && !isLoading) return null;
+  if (totalPages <= 1) return null;
 
   return (
-    <div className={`flex flex-col sm:flex-row items-center justify-between ${className}`} {...props}>
-      {error && (
-        <div className="text-red-500 text-sm mb-2 sm:mb-0">
-          {error}
-        </div>
-      )}
-      
+    <div className={`flex flex-col sm:flex-row items-center justify-between ${className}`}>
       <div className="flex items-center mb-2 sm:mb-0">
         <select 
           value={itemsPerPage}
           onChange={handleItemsPerPageChange}
           className="mr-4 p-1 border rounded text-sm"
-          disabled={isLoading}
         >
           {itemsPerPageOptions.map(option => (
             <option key={option} value={option}>
@@ -102,16 +62,18 @@ const Pagination = ({
             </option>
           ))}
         </select>
+        <span className="text-sm text-[#6d7194]">
+          Showing {(currentPage - 1) * itemsPerPage + 1}-{Math.min(currentPage * itemsPerPage, totalItems)} of {totalItems} items
+        </span>
       </div>
       
       <div className="flex items-center">
         <button
           onClick={handlePrevious}
-          disabled={currentPage === 1 || isLoading}
-          className={`p-2 rounded-lg ${currentPage === 1 || isLoading ? 'text-gray-400 cursor-not-allowed' : 'text-[#232323] hover:bg-[#f7f2fb]'}`}
+          disabled={currentPage === 1}
+          className={`p-2 rounded-lg ${currentPage === 1 ? 'text-gray-400 cursor-not-allowed' : 'text-[#232323] hover:bg-[#f7f2fb]'}`}
           aria-label="Previous page"
         >
-          {/* Consider using an inline SVG or imported icon */}
           <svg className="w-4 h-4 transform rotate-90" fill="currentColor" viewBox="0 0 20 20">
             <path fillRule="evenodd" d="M5.293 7.293a1 1 0 011.414 0L10 10.586l3.293-3.293a1 1 0 111.414 1.414l-4 4a1 1 0 01-1.414 0l-4-4a1 1 0 010-1.414z" clipRule="evenodd" />
           </svg>
@@ -124,16 +86,10 @@ const Pagination = ({
                 <span className="px-2 text-[#6d7194]">...</span>
               ) : (
                 <button
-                  onClick={() => {
-                    if (!isLoading) {
-                      setCurrentPage(page);
-                      onPageChange(page);
-                    }
-                  }}
-                  disabled={isLoading}
+                  onClick={() => onPageChange(page)}
                   className={`w-8 h-8 mx-1 rounded-lg text-sm ${currentPage === page 
                     ? 'bg-[#652995] text-white' 
-                    : 'text-[#232323] hover:bg-[#f7f2fb]'} ${isLoading ? 'opacity-50' : ''}`}
+                    : 'text-[#232323] hover:bg-[#f7f2fb]'}`}
                   aria-current={currentPage === page ? 'page' : undefined}
                 >
                   {page}
@@ -145,8 +101,8 @@ const Pagination = ({
         
         <button
           onClick={handleNext}
-          disabled={currentPage === totalPages || isLoading}
-          className={`p-2 rounded-lg ${currentPage === totalPages || isLoading ? 'text-gray-400 cursor-not-allowed' : 'text-[#232323] hover:bg-[#f7f2fb]'}`}
+          disabled={currentPage === totalPages}
+          className={`p-2 rounded-lg ${currentPage === totalPages ? 'text-gray-400 cursor-not-allowed' : 'text-[#232323] hover:bg-[#f7f2fb]'}`}
           aria-label="Next page"
         >
           <svg className="w-4 h-4 transform -rotate-90" fill="currentColor" viewBox="0 0 20 20">
@@ -159,8 +115,12 @@ const Pagination = ({
 };
 
 Pagination.propTypes = {
-  apiEndpoint: PropTypes.string.isRequired,
+  currentPage: PropTypes.number.isRequired,
+  itemsPerPage: PropTypes.number.isRequired,
+  totalPages: PropTypes.number.isRequired,
+  totalItems: PropTypes.number.isRequired,
   onPageChange: PropTypes.func.isRequired,
+  onItemsPerPageChange: PropTypes.func.isRequired,
   className: PropTypes.string,
   itemsPerPageOptions: PropTypes.arrayOf(PropTypes.number),
 };
