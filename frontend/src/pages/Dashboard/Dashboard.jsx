@@ -27,12 +27,15 @@ const DashboardView = () => {
 
   // Memoized filter for selected trials
   const filteredTrials = useMemo(() => 
-    (trials || []).filter(trial => selectedTrials.includes(trial.id)),
+    (trials || []).filter(trial => selectedTrials.includes(trial.nctId)),
     [trials, selectedTrials]
   );
 
   // Memoized eligibility data calculation
   const eligibilityData = useMemo(() => getEligibilityData(trials), [trials]);
+
+  // Extract trial IDs from selected trials
+  const selectedTrialIds = useMemo(() => selectedTrials.map(trial => trial.nctId), [selectedTrials]);
 
   // Memoized trial selection handler
   const handleSelectTrial = useCallback((trialId) => {
@@ -69,37 +72,37 @@ const DashboardView = () => {
 
               {isDashboardView ? (
                 <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-              <div className="lg:col-span-1">
-                <TrialsByPhaseChart />
-              </div>
-              
-              <div className="lg:col-span-1">
-                <TrialResultsChart />
-              </div>
-              
-              <div className="lg:col-span-1">
-                <RegionalDistributionMap />
-              </div>
-              
-              <div className="lg:col-span-1">
-                <SponsorsChart />
-              </div>
-              
-              <div className="lg:col-span-2">
-                <EligibilityDistributionChart />
-              </div>
-            </div>
+                  <div className="lg:col-span-1">
+                    <TrialsByPhaseChart trials={filteredTrials} />
+                  </div>
+  
+                  <div className="lg:col-span-1">
+                    <TrialResultsChart trials={filteredTrials} />
+                  </div>
+  
+                  <div className="lg:col-span-1">
+                    <RegionalDistributionMap trials={filteredTrials} />
+                  </div>
+  
+                  <div className="lg:col-span-1">
+                    <SponsorsChart trials={filteredTrials} selectedTrials={selectedTrialIds} />
+                  </div>
+  
+                  <div className="lg:col-span-2">
+                    <EligibilityDistributionChart data={eligibilityData} />
+                  </div>
+                </div>
               ) : (
                 <div className="space-y-4">
                   {trials.map(trial => (
                     <div 
-                      key={trial.id} 
+                      key={trial.nctId} 
                       className={`p-4 border rounded-lg cursor-pointer transition-colors ${
-                        selectedTrials.includes(trial.id)
+                        selectedTrials.includes(trial.nctId)
                           ? 'border-[#652995] bg-[#f7f2fb]'
                           : 'border-[#e9eaef] hover:bg-[#f7f7f7]'
                       }`}
-                      onClick={() => handleSelectTrial(trial.id)}
+                      onClick={() => handleSelectTrial(trial.nctId)}
                     >
                       <h3 className="font-medium">{trial.title}</h3>
                       <p className="text-sm text-[#6d7194]">

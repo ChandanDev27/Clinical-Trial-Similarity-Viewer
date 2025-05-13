@@ -7,27 +7,26 @@ import sponsorLogos from '../../sponsorLogos';
 const SponsorsChart = ({ trials, selectedTrials }) => {
   // Process sponsors directly without useEffect
   const sponsorsData = useMemo(() => {
-    const sponsorsMap = new Map();
+  const sponsorsMap = new Map();
 
-    // Filter trials based on selection
-    const relevantTrials = selectedTrials?.length
-      ? trials.filter(trial => selectedTrials.includes(trial.id))
-      : trials;
+  // Filter trials based on selection
+  const relevantTrials = selectedTrials?.length
+    ? trials.filter(trial => selectedTrials.includes(trial.nctId))
+    : trials;
 
-    relevantTrials.forEach(trial => {
-      const sponsorName = trial.sponsor || 'Unknown';
-      sponsorsMap.set(sponsorName, (sponsorsMap.get(sponsorName) || 0) + 1);
-    });
+  relevantTrials.forEach(trial => {
+    const sponsorName = trial.sponsor || "Unknown";
+    sponsorsMap.set(sponsorName, (sponsorsMap.get(sponsorName) || 0) + 1);
+  });
 
-    return Array.from(sponsorsMap.entries())
-      .map(([name, count]) => ({
-        name,
-        count,
-        logo: sponsorLogos[name] || '/images/default-sponsor.png',
-      }))
-      .sort((a, b) => b.count - a.count)
-      .slice(0, 4); // Show top 4 sponsors
-  }, [trials, selectedTrials]);
+  return Array.from(sponsorsMap.entries()).map(([name, count]) => ({
+    name,
+    count,
+    logo: sponsorLogos[name] || sponsorLogos["default"], // Ensure fallback logo
+  }))
+  .sort((a, b) => b.count - a.count)
+  .slice(0, 4); // Show top 4 sponsors
+}, [trials, selectedTrials]);
 
   const maxCount = Math.max(...sponsorsData.map(s => s.count), 1);
 

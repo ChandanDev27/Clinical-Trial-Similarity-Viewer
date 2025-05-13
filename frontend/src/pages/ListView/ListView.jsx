@@ -17,7 +17,7 @@ const ListView = () => {
   const [itemsPerPage, setItemsPerPage] = useState(8);
   
   const { trials, loading, error, totalPages, totalItems } = useTrials(currentPage, itemsPerPage);
-  const { selectedTrials, saveSelections } = useSelections();
+  const { selectedTrials, saveSelections, fetchSelections } = useSelections();
 
   const navigate = useNavigate();
 
@@ -27,11 +27,14 @@ const ListView = () => {
   }, [navigate]);
 
   const handleTrialSelect = useCallback(async (trialId) => {
-    const newSelections = selectedTrials.includes(trialId)
-      ? selectedTrials.filter(id => id !== trialId)
-      : [...selectedTrials, trialId];
-    await saveSelections(newSelections);
-  }, [selectedTrials, saveSelections]);
+  const newSelections = selectedTrials.includes(trialId)
+    ? selectedTrials.filter(id => id !== trialId)
+    : [...selectedTrials, trialId];
+
+  await saveSelections(newSelections);
+  await fetchSelections();
+}, [selectedTrials, saveSelections, fetchSelections]);
+
 
   const handleSelectAll = useCallback((isSelected) => {
     const newSelections = isSelected ? trials.map(trial => trial.nctId) : [];
