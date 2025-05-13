@@ -1,8 +1,16 @@
-import React, { useEffect, useMemo } from "react";
+import React, { useMemo } from "react";
 import { MapContainer, TileLayer, Marker, Popup } from "react-leaflet";
+import L from "leaflet";
 import "leaflet/dist/leaflet.css";
 import Card from "../../components/ui/Card";
 import { getCountryCoordinates } from "../../utils/countryCoordinates";
+
+const customTrialIcon = new L.divIcon({
+  className: "trial-marker",
+  html: `<div class="custom-marker"></div>`,
+  iconSize: [20, 20],
+  popupAnchor: [0, -10],
+});
 
 const RegionalDistributionMap = ({ trials = [] }) => {
   const mapData = useMemo(() => {
@@ -26,33 +34,26 @@ const RegionalDistributionMap = ({ trials = [] }) => {
 
   return (
     <Card className="p-5">
-      <h2
-  style={{
-    fontFamily: "Inter",
-    fontWeight: 500,
-    fontSize: "16px",
-    lineHeight: "100%",
-    letterSpacing: "0%",
-    marginTop: "20px",
-    width: "122px",
-    height: "19px",
-    display: "block",
-    textAlign: "left",
-    color: "#6D7194",
-  }}
->
-  Trials by Region
-</h2>
+      <h2 className="text-base font-medium text-[#6d7194] mb-4">Trials by Region</h2>
 
-      {/* Leaflet Map */}
-      <MapContainer center={[20, 0]} zoom={2} className="w-full h-[400px] rounded-[12px]">
+      <div className="flex flex-wrap mb-4">
+        <div className="flex items-center mr-[123px]">
+          <div className="w-2 h-2 rounded-full bg-[#38E0AE] mr-2"></div>
+          <span className="text-xs text-[#a5a7b1]">Trials</span>
+        </div>
+        <div className="flex items-center mr-[123px]">
+          <div className="w-2 h-2 rounded-full bg-[#F4F5FA] mr-2"></div>
+          <span className="text-xs text-[#a5a7b1]">--</span>
+        </div>
+      </div>
+
+      <MapContainer center={[20, 0]} zoom={2} className="w-full h-[310px] rounded-[12px]">
         <TileLayer
           url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
           attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
         />
-
         {mapData.map((item, index) => (
-          <Marker key={index} position={[item.coordinates.lat, item.coordinates.lng]}>
+          <Marker key={index} position={[item.coordinates.lat, item.coordinates.lng]} icon={customTrialIcon}>
             <Popup>
               <div style={{ fontFamily: "Inter", fontSize: "14px", fontWeight: 500 }}>
                 {item.country}: {item.count} trial(s)
