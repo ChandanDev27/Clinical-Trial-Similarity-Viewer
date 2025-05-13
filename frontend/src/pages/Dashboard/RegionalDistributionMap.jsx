@@ -27,17 +27,22 @@ const RegionalDistributionMap = ({ trials = [] }) => {
   return (
     <Card className="p-5">
       <h2
-        style={{
-          fontFamily: "Inter",
-          fontWeight: 500,
-          fontSize: "16px",
-          lineHeight: "100%",
-          letterSpacing: "0%",
-          marginTop: "20px",
-        }}
-      >
-        Trials by Region
-      </h2>
+  style={{
+    fontFamily: "Inter",
+    fontWeight: 500,
+    fontSize: "16px",
+    lineHeight: "100%",
+    letterSpacing: "0%",
+    marginTop: "20px",
+    width: "122px",
+    height: "19px",
+    display: "block",
+    textAlign: "left",
+    color: "#6D7194",
+  }}
+>
+  Trials by Region
+</h2>
 
       {/* Leaflet Map */}
       <MapContainer center={[20, 0]} zoom={2} className="w-full h-[400px] rounded-[12px]">
