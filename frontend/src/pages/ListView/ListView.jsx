@@ -1,4 +1,5 @@
 import React, { useState, useCallback } from 'react';
+import { useNavigate } from 'react-router-dom';
 import TrialsTable from './TrialsTable';
 import Pagination from '../../components/navigation/Pagination';
 import useTrials from '../../hooks/useTrials';
@@ -18,9 +19,12 @@ const ListView = () => {
   const { trials, loading, error, totalPages, totalItems } = useTrials(currentPage, itemsPerPage);
   const { selectedTrials, saveSelections } = useSelections();
 
+  const navigate = useNavigate();
+
+  // Changed handleViewChange to navigate based on the view choice
   const handleViewChange = useCallback((view) => {
-    setViewMode(view);
-  }, []);
+    navigate(view === 'list' ? '/listview' : '/dashboard');
+  }, [navigate]);
 
   const handleTrialSelect = useCallback(async (trialId) => {
     const newSelections = selectedTrials.includes(trialId)
@@ -45,13 +49,14 @@ const ListView = () => {
     <ErrorBoundary>
       <div className="min-h-screen bg-[#f7f2fb]">
         <Header />
-        
+
         <div className="p-5">
           <div className="bg-white rounded-t-xl p-6 border border-[#e9eaef]">
             <TitleSection />
-            
+
             <div className="border-t border-[#e9eaef] pt-6 mb-6"></div>
             
+            {/* Using the updated ViewToggle which calls handleViewChange to navigate */}
             <ViewToggle viewMode={viewMode} onViewChange={handleViewChange} />
             
             <TrialsTable 

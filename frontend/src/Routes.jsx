@@ -1,8 +1,8 @@
 import React from 'react';
 import { BrowserRouter as Router, Routes, Route } from 'react-router-dom';
 
-// Import ListView component
 import ListView from './pages/ListView/ListView';
+import Dashboard from './pages/Dashboard/Dashboard';
 
 const AppRoutes = () => {
   return (
@@ -10,6 +10,7 @@ const AppRoutes = () => {
       <Routes>
         <Route path="/" element={<ListView />} /> {/* Default route */}
         <Route path="/listview" element={<ListView />} />
+        <Route path="/dashboard" element={<Dashboard />} />
       </Routes>
     </Router>
   );

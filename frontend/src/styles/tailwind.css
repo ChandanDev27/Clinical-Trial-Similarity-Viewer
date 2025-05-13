@@ -79,3 +79,21 @@
     border-color: var(--border-transparent);
   }
 }
+
+@layer components {
+  .dashboard-card {
+    @apply bg-white border border-[#e9eaef] rounded-xl;
+  }
+  
+  .tab-button {
+    @apply px-3 py-2 text-xs font-medium rounded-lg border border-[#e9eaef];
+  }
+  
+  .tab-button-active {
+    @apply bg-[#f7f2fb] border-[#652995] text-[#652995] font-semibold;
+  }
+  
+  .indicator-dot {
+    @apply w-2 h-2 rounded-full inline-block mr-2;
+  }
+}
