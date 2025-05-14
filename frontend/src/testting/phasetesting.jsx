@@ -10,7 +10,7 @@ const testTrials = [
   { phases: ["PHASE 2"] },
 ];
 
-const TestPage = () => {
+const PhaseTest = () => {
   return (
     <div className="p-10">
       <h1 className="text-xl font-semibold mb-5">Test Trials By Phase Chart</h1>
@@ -19,4 +19,4 @@ const TestPage = () => {
   );
 };
 
-export default TestPage;
+export default PhaseTest;
