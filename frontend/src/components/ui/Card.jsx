@@ -3,7 +3,7 @@ import PropTypes from 'prop-types';
 
 const Card = ({ children, className = '' }) => {
   return (
-    <div className={`bg-white rounded-xl p-6 border border-[#e9eaef] ${className}`}>
+    <div className={`bg-white rounded-xl p-6 border border-[#e9eaef] min-h-[300px] ${className || ''}`}>
       {children}
     </div>
   );

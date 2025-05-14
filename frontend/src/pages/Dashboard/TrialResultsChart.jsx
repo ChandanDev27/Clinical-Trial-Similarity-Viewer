@@ -44,9 +44,8 @@ const TrialResultsChart = ({ trials = [] }) => {
     <Card className="p-5">
       <h2 className="text-base font-medium text-[#6d7194] mb-4">Trial Results</h2>
 
-      {/* Legend Section with Rounded Indicators */}
       <div className="flex flex-wrap mb-4">
-        {/* Has result */}
+        {/* /* Has result */}
         <div className="flex items-center mr-[80px]">
           <div className="w-2 h-2 rounded-full bg-[#652995] mr-2"></div>
           <span className="text-xs text-[#a5a7b1]">Has result</span>
@@ -68,19 +67,19 @@ const TrialResultsChart = ({ trials = [] }) => {
       {/* Donut Chart */}
       <div className="flex justify-center items-center"
   style={{
-    width: "152px",  // ✅ Sets the correct width
-    height: "152px", // ✅ Sets the correct height
+    width: "152px",
+    height: "152px",
   }}
 >
   <Doughnut
     data={processResultsData()}
     options={{
-      cutout: "70%", // Creates donut effect
-      maintainAspectRatio: false, // ✅ Allows custom size
-      responsive: true, // ✅ Ensures correct scaling
+      cutout: "70%",
+      maintainAspectRatio: false,
+      responsive: true,
       plugins: {
         legend: {
-          display: false, // Hides Chart.js legend
+          display: false,
         },
         tooltip: {
           callbacks: {

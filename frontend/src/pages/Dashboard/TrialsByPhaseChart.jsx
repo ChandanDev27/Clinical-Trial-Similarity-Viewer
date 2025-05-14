@@ -97,7 +97,7 @@ const TrialsByPhaseChart = ({ trials = [] }) => {
       {trials.length === 0 ? (
         <div className="text-sm text-[#6d7194]">No phase data available for selected trials</div>
       ) : (
-        <div className="w-[392px] h-[229px] flex justify-center">
+        <div className="w-[392px] h-[297px] flex justify-center">
           <Bar data={phaseChartData} options={chartOptions} />
         </div>
       )}

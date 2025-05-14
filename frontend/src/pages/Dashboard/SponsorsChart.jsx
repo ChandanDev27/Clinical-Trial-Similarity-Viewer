@@ -3,11 +3,10 @@ import Card from "../../components/ui/Card";
 import sponsorLogos from "../../sponsorLogos";
 
 const SponsorsChart = ({ trials, selectedTrials }) => {
-  // Process sponsors efficiently using useMemo
   const sponsorsData = useMemo(() => {
     const sponsorsMap = new Map();
 
-    // Filter trials based on selection
+    // Filter the trials based on selection
     const relevantTrials = selectedTrials?.length
       ? trials.filter((trial) => selectedTrials.includes(trial.nctId))
       : trials;
@@ -21,13 +20,13 @@ const SponsorsChart = ({ trials, selectedTrials }) => {
       .map(([name, count]) => ({
         name,
         count,
-        logo: sponsorLogos[name] || sponsorLogos["default"], // Ensure fallback logo
+        logo: sponsorLogos[name] || sponsorLogos["default"],
       }))
       .sort((a, b) => b.count - a.count)
-      .slice(0, 4); // Show top 4 sponsors
+      .slice(0, 4); //it show the top 4 sponsor
   }, [trials, selectedTrials]);
 
-  // Dynamically calculate max count for proportional bar width
+  // Dynamically calculate the maximum count for proportional bar width
   const maxCount = Math.max(...sponsorsData.map((s) => s.count), 1);
 
   const calculateBarWidth = (count) => {
@@ -36,7 +35,7 @@ const SponsorsChart = ({ trials, selectedTrials }) => {
   };
 
   return (
-    <Card className="border border-gray-300 rounded-lg overflow-hidden max-w-[360px] max-h-[400px] w-[360px] h-[400px] p-[16px]">
+    <Card className="border border-gray-300 rounded-lg overflow-hidden max-w-[380px] max-h-[320px] w-[380px] h-[3200px] p-[16px]">
       <h2 className="text-base font-medium text-[#6d7194] mb-4 text-left">Sponsors</h2>
 
       <div className="flex flex-row items-center gap-3 mb-[30px]">
