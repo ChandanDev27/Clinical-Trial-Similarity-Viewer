@@ -13,23 +13,39 @@ import EligibilityDistributionChart from './EligibilityDistributionChart';
 import TrialsByPhaseChart from './TrialsByPhaseChart';
 import TrialResultsChart from './TrialResultsChart';
 import SponsorsChart from './SponsorsChart';
-import { getEligibilityData } from '../../utils/dataUtils';
+import { 
+  getEligibilityData,
+  processSponsorsData,
+  processPhaseData,
+  processResultsData,
+  processRegionalData
+} from '../../utils/dataUtils'; // Import all processing functions
 import useViewMode from '../../hooks/useViewMode';
 
 const DashboardView = () => {
   const { viewMode, setViewMode, isDashboardView } = useViewMode();
   const dispatch = useDispatch();
   const { trials, selectedTrials, loading, error } = useSelector(state => state.trials);
+  
+  // Memoized filter for selected trials
+  const filteredTrials = useMemo(() => 
+  (trials || []).filter(trial => 
+    (selectedTrials || []).includes(trial.nctId)
+  ),
+  [trials, selectedTrials]
+);
+
+  const processedData = useMemo(() => ({
+  eligibility: getEligibilityData(trials),
+  sponsors: processSponsorsData(trials || [], selectedTrials || []),
+  phases: processPhaseData(filteredTrials || []),
+  results: processResultsData(filteredTrials || []),
+  regional: processRegionalData(filteredTrials || [])
+}), [trials, selectedTrials, filteredTrials]);
 
   useEffect(() => {
     dispatch(fetchTrials());
   }, [dispatch]);
-
-  // Memoized filter for selected trials
-  const filteredTrials = useMemo(() => 
-    (trials || []).filter(trial => selectedTrials.includes(trial.nctId)),
-    [trials, selectedTrials]
-  );
 
   // Memoized eligibility data calculation
   const eligibilityData = useMemo(() => getEligibilityData(trials), [trials]);
@@ -70,33 +86,29 @@ const DashboardView = () => {
                 className="mb-8"
               />
 
-              {isDashboardView ? (
-                <div className="flex flex-col gap-6 w-full">
-
-                  <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-                    <div className="bg-white shadow-md rounded-lg border p-4 h-[337px]">
-                      <TrialsByPhaseChart trials={filteredTrials} />
-                    </div>
-                    
-                    <div className="bg-white shadow-md rounded-lg border p-4 h-[337px]">
-                      <TrialResultsChart trials={filteredTrials} />
-                    </div>
-
-                    <div className="bg-white shadow-md rounded-lg border p-4 h-[337px]">
-                      <RegionalDistributionMap trials={filteredTrials} />
-                    </div>
-                  </div>
-
-                  <div className="flex flex-col md:flex-row gap-6">
-                    <div className="w-full md:w-[360px] bg-white shadow-md rounded-lg border p-4 h-[400px]">
-                      <SponsorsChart trials={filteredTrials} selectedTrials={selectedTrialIds} />
-                    </div>
-
-                    <div className="w-full md:w-[886px] bg-white shadow-md rounded-lg border p-4 h-[400px]">
-                      <EligibilityDistributionChart data={eligibilityData} />
-                    </div>
-                  </div>
-                </div>
+                 {isDashboardView ? (
+      <div className="flex flex-col gap-6 w-full">
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+          <div className="h-[337px]">
+            <TrialsByPhaseChart data={processedData.phases} />
+          </div>
+          <div className="h-[337px]">
+            <TrialResultsChart data={processedData.results} />
+          </div>
+          <div className="h-[337px]">
+            <RegionalDistributionMap data={processedData.regional} />
+          </div>
+        </div>
+        
+        <div className="grid grid-cols-1 md:grid-cols-5 gap-6">
+          <div className="md:col-span-2 h-[400px]">
+            <SponsorsChart data={processedData.sponsors || []} />
+          </div>
+          <div className="md:col-span-3 h-[400px]">
+            <EligibilityDistributionChart data={processedData.eligibility} />
+          </div>
+        </div>
+      </div>
               ) : (
                 <div className="space-y-4">
                   {trials.map(trial => (

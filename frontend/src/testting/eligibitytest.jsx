@@ -420,7 +420,7 @@ const EligibilityDistributionChartTest = () => {
             <option value="locations">No. of Locations</option>
             <option value="enrollment">Enrollment Info</option>
             <option value="countries">Countries</option>
-            <option value="timeline">Timeline</option>
+            <option value="timelines">Timelines</option>
             <option value="pregnant">Pregnant</option>
             <option value="age">Age</option>
             <option value="egfr">EGFR</option>

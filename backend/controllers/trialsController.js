@@ -624,7 +624,7 @@ const getDashboardData = (req, res) => {
             noOfLocations: createBins(data.map(t => t.eligibilityValues.locations), 10),
             enrollment: createBins(data.map(t => t.eligibilityValues.enrollment), 10),
             countries: createBins(data.map(t => t.eligibilityValues.countries), 5),
-            timeline: createBins(data.map(t => t.eligibilityValues.timelines), 10),
+            timeline: createBins(data.map(t => t.eligibilityValues.timeline), 10),
             pregnant: createBins(data.map(t => t.eligibilityValues.pregnant), 10),
             age: createBins(data.map(t => t.eligibilityValues.age), 10),
             egfr: createBins(data.map(t => t.eligibilityValues.egfr), 10),

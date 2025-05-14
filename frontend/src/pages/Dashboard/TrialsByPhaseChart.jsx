@@ -5,27 +5,7 @@ import { Chart as ChartJS, BarElement, CategoryScale, LinearScale, Tooltip, Lege
 
 ChartJS.register(BarElement, CategoryScale, LinearScale, Tooltip, Legend);
 
-const TrialsByPhaseChart = ({ trials = [] }) => {
-  const processPhaseData = () => {
-    const phaseCounts = {
-      "Phase 1": 0,
-      "Phase 2": 0,
-      "Phase 3": 0,
-      "Phase 4": 0,
-    };
-
-    trials.forEach((trial) => {
-      trial.phases?.forEach((phase) => {
-        const phaseKey = `Phase ${phase.replace("PHASE", "").trim()}`;
-        if (phaseCounts.hasOwnProperty(phaseKey)) {
-          phaseCounts[phaseKey]++;
-        }
-      });
-    });
-
-    return phaseCounts;
-  };
-
+const TrialsByPhaseChart = ({ data = [] }) => {
   const createGradient = (ctx, chartArea) => {
     const gradient = ctx.createLinearGradient(0, chartArea.bottom, 0, chartArea.top);
     gradient.addColorStop(0, "#fed3a6");
@@ -34,16 +14,16 @@ const TrialsByPhaseChart = ({ trials = [] }) => {
     return gradient;
   };
 
-  const phaseCounts = processPhaseData();
-  const phaseChartData = {
-    labels: Object.keys(phaseCounts),
+  const chartData = {
+    labels: data.map(item => item.phase),
     datasets: [
       {
         label: "Trials Count",
-        data: Object.values(phaseCounts),
+        data: data.map(item => item.count),
         backgroundColor: (context) => {
           const { ctx, chartArea } = context.chart;
-          return chartArea ? createGradient(ctx, chartArea) : "#f04c4c";
+          if (!chartArea) return "#f04c4c";
+          return createGradient(ctx, chartArea);
         },
         borderSkipped: false,
         borderRadius: 100,
@@ -69,7 +49,7 @@ const TrialsByPhaseChart = ({ trials = [] }) => {
       y: {
         grid: { display: false },
         border: { display: false },
-        ticks: {
+          ticks: {
           display: true,
           color: "#6d7194",
           font: { weight: "bold" },
@@ -84,7 +64,7 @@ const TrialsByPhaseChart = ({ trials = [] }) => {
   };
 
   return (
-    <Card className="p-5">
+    <Card className="h-full p-5 flex flex-col">
       <h2 className="text-base font-medium text-[#6d7194] mb-4">Trials by Phase</h2>
 
       <div className="flex flex-wrap mb-4">
@@ -94,11 +74,13 @@ const TrialsByPhaseChart = ({ trials = [] }) => {
         </div>
       </div>
 
-      {trials.length === 0 ? (
-        <div className="text-sm text-[#6d7194]">No phase data available for selected trials</div>
+      {Object.keys(data).length === 0 ? (
+        <div className="text-sm text-[#6d7194] flex-grow flex items-center justify-center">
+          No phase data available
+        </div>
       ) : (
-        <div className="w-[392px] h-[297px] flex justify-center">
-          <Bar data={phaseChartData} options={chartOptions} />
+        <div className="flex-grow flex justify-center">
+          <Bar data={chartData} options={chartOptions} />
         </div>
       )}
     </Card>

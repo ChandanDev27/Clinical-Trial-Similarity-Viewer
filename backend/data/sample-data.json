@@ -12,7 +12,7 @@
     "eligibilityValues": {
       "studyDuration": 15,
       "locations": 100,
-      "enrollmentment": 5,
+      "enrollment": 5,
       "countries": 18,
       "timelines": 2,
       "pregnant": 94,
@@ -35,7 +35,7 @@
     "eligibilityValues": {
       "studyDuration": 87,
       "locations": 221,
-      "enrollmentment": 199,
+      "enrollment": 199,
       "countries": 173,
       "timelines": 23,
       "pregnant": 154,
@@ -58,7 +58,7 @@
     "eligibilityValues": {
       "studyDuration": 121,
       "locations": 200,
-      "enrollmentment": 150,
+      "enrollment": 150,
       "countries": 34,
       "timelines": 112,
       "pregnant": 17,
@@ -81,7 +81,7 @@
     "eligibilityValues": {
       "studyDuration": 200,
       "locations": 89,
-      "enrollmentment": 79,
+      "enrollment": 79,
       "countries": 12,
       "timelines": 244,
       "pregnant": 55,
@@ -104,7 +104,7 @@
     "eligibilityValues": {
       "studyDuration": 299,
       "locations": 133,
-      "enrollmentment": 122,
+      "enrollment": 122,
       "countries": 275,
       "timelines": 90,
       "pregnant": 86,
@@ -127,7 +127,7 @@
     "eligibilityValues": {
       "studyDuration": 49,
       "locations": 297,
-      "enrollmentment": 57,
+      "enrollment": 57,
       "countries": 132,
       "timelines": 268,
       "pregnant": 144,
@@ -150,7 +150,7 @@
     "eligibilityValues": {
       "studyDuration": 195,
       "locations": 15,
-      "enrollmentment": 67,
+      "enrollment": 67,
       "countries": 288,
       "timelines": 121,
       "pregnant": 110,
@@ -173,7 +173,7 @@
     "eligibilityValues": {
       "studyDuration": 203,
       "locations": 101,
-      "enrollmentment": 13,
+      "enrollment": 13,
       "countries": 199,
       "timelines": 55,
       "pregnant": 221,
@@ -196,7 +196,7 @@
     "eligibilityValues": {
       "studyDuration": 35,
       "locations": 120,
-      "enrollmentment": 14,
+      "enrollment": 14,
       "countries": 33,
       "timelines": 20,
       "pregnant": 88,
@@ -219,7 +219,7 @@
     "eligibilityValues": {
       "studyDuration": 76,
       "locations": 205,
-      "enrollmentment": 177,
+      "enrollment": 177,
       "countries": 160,
       "timelines": 50,
       "pregnant": 132,
@@ -242,7 +242,7 @@
     "eligibilityValues": {
       "studyDuration": 109,
       "locations": 188,
-      "enrollmentment": 141,
+      "enrollment": 141,
       "countries": 27,
       "timelines": 130,
       "pregnant": 38,
@@ -265,7 +265,7 @@
     "eligibilityValues": {
       "studyDuration": 180,
       "locations": 78,
-      "enrollmentment": 88,
+      "enrollment": 88,
       "countries": 10,
       "timelines": 215,
       "pregnant": 73,
@@ -288,7 +288,7 @@
     "eligibilityValues": {
       "studyDuration": 278,
       "locations": 141,
-      "enrollmentment": 113,
+      "enrollment": 113,
       "countries": 260,
       "timelines": 98,
       "pregnant": 72,
@@ -311,7 +311,7 @@
     "eligibilityValues": {
       "studyDuration": 54,
       "locations": 290,
-      "enrollmentment": 60,
+      "enrollment": 60,
       "countries": 125,
       "timelines": 255,
       "pregnant": 140,
@@ -334,7 +334,7 @@
     "eligibilityValues": {
       "studyDuration": 182,
       "locations": 28,
-      "enrollmentment": 49,
+      "enrollment": 49,
       "countries": 280,
       "timelines": 110,
       "pregnant": 92,
@@ -357,7 +357,7 @@
     "eligibilityValues": {
       "studyDuration": 188,
       "locations": 111,
-      "enrollmentment": 22,
+      "enrollment": 22,
       "countries": 185,
       "timelines": 64,
       "pregnant": 209,

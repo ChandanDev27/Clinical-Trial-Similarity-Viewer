@@ -1,3 +1,4 @@
+export const getCountryCoordinates = (country) => {
 const countryCoordinates = {
     'Austria': { lat: 47.5162, lng: 14.5501 },
     'Belgium': { lat: 50.8503, lng: 4.3517 },
@@ -35,9 +36,7 @@ const countryCoordinates = {
     'Turkey': { lat: 38.9637, lng: 35.2433 },
     'Australia': { lat: -25.2744, lng: 133.7751 }
 };
-
-export const getCountryCoordinates = (country) => {
   return countryCoordinates[country] || null;
 };
 
-export default countryCoordinates;
+export default getCountryCoordinates;

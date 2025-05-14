@@ -1,4 +1,4 @@
-import React, { useState, useMemo, useEffect } from "react";
+import React, { useState, useEffect } from "react";
 import Card from "../../components/ui/Card";
 import { Bar } from "react-chartjs-2";
 import {
@@ -12,91 +12,31 @@ import {
 
 ChartJS.register(CategoryScale, LinearScale, BarElement, Tooltip, Legend);
 
-const ELIGIBILITY_RANGES = {
-  studyDuration: { min: 0, max: 300, step: 50 },
-  locations: { min: 0, max: 300, step: 50 },
-  enrollment: { min: 0, max: 300, step: 50 },
-  countries: { min: 0, max: 300, step: 50 },
-  timelines: { min: 0, max: 300, step: 50 },
-  pregnant: { min: 0, max: 300, step: 50 },
-  age: { min: 0, max: 300, step: 50 },
-  egfr: { min: 0, max: 300, step: 50 },
-  hba1c: { min: 0, max: 300, step: 50 },
-  bmi: { min: 0, max: 300, step: 50 },
-};
+const tabs = [
+  { id: "studyDuration", label: "Study Duration" },
+  { id: "locations", label: "No. of Locations" },
+  { id: "enrollment", label: "Enrollment Info" },
+  { id: "countries", label: "Countries" },
+  { id: "timeline", label: "Timeline" },
+  { id: "pregnant", label: "Pregnant" },
+  { id: "age", label: "Age" },
+  { id: "egfr", label: "EGFR" },
+  { id: "hba1c", label: "HBA1C" },
+  { id: "bmi", label: "BMI" },
+];
 
-const createConstantBins = (data, binCount, minRange, maxRange) => {
-  if (!data || !Array.isArray(data)) return [];
-  
-  const binInterval = (maxRange - minRange) / binCount;
-  
-  return Array.from({ length: binCount }, (_, i) => {
-    const lowerBound = minRange + i * binInterval;
-    const upperBound = lowerBound + binInterval;
-    const count = data.filter(d => d >= lowerBound && d < upperBound).length;
-    return {
-      range: lowerBound,
-      upperBound: upperBound,
-      value: count,
-      binInterval
-    };
-  });
-};
-
-const EligibilityDistributionChart = ({ trials = [], isLoading = false }) => {
-  const [activeTab, setActiveTab] = useState("studyDuration");
+const EligibilityDistributionChart = ({ data = {}, isLoading = false }) => {
+  const [activeTab, setActiveTab] = useState(tabs[0].id);
   const [animationValues, setAnimationValues] = useState([]);
 
-  const tabs = [
-    { id: "studyDuration", label: "Study Duration" },
-    { id: "locations", label: "No. of Locations" },
-    { id: "enrollment", label: "Enrollment Info" },
-    { id: "countries", label: "Countries" },
-    { id: "timelines", label: "Timeline" },
-    { id: "pregnant", label: "Pregnant" },
-    { id: "age", label: "Age" },
-    { id: "egfr", label: "EGFR" },
-    { id: "hba1c", label: "HBA1C" },
-    { id: "bmi", label: "BMI" },
-  ];
-
-  const getEligibilityData = (trials) => {
-    if (!trials || !Array.isArray(trials)) return {};
-
-    return Object.fromEntries(
-      Object.keys(ELIGIBILITY_RANGES).map(key => {
-        const range = ELIGIBILITY_RANGES[key];
-        const binCount = Math.ceil(range.max / range.step);
-        return [
-          key,
-          createConstantBins(
-            trials.map(t => {
-              if (key === 'enrollment') {
-                return t.eligibilityValues?.enrollment || 
-                       t.eligibilityValues?.enrollmentment || 0;
-              }
-              return t.eligibilityValues?.[key] || 0;
-            }),
-            binCount,
-            range.min,
-            range.max
-          )
-        ];
-      })
-    );
-  };
-
-  const eligibilityData = useMemo(() => getEligibilityData(trials), [trials]);
-  const chartData = eligibilityData[activeTab] || [];
+  // Get the active tab data or empty array if not found
+  const activeData = data[activeTab] || [];
 
   // Create placeholder data for animation
   useEffect(() => {
     if (isLoading) {
-      const range = ELIGIBILITY_RANGES[activeTab] || ELIGIBILITY_RANGES.studyDuration;
-      const binCount = Math.ceil(range.max / range.step);
-      
       // Start with all values at 0
-      setAnimationValues(Array(binCount).fill(0));
+      setAnimationValues(Array(5).fill(0));
       
       // Animate each bar one by one with slight delay between them
       const interval = setInterval(() => {
@@ -105,7 +45,7 @@ const EligibilityDistributionChart = ({ trials = [], isLoading = false }) => {
           const randomIndex = Math.floor(Math.random() * newValues.length);
           newValues[randomIndex] = Math.min(
             newValues[randomIndex] + Math.random() * 5, 
-            20 + Math.random() * 30 // Max height for placeholders
+            20 + Math.random() * 30
           );
           return newValues;
         });
@@ -114,23 +54,16 @@ const EligibilityDistributionChart = ({ trials = [], isLoading = false }) => {
       return () => clearInterval(interval);
     } else {
       // When loading is complete, animate to actual values
-      if (chartData.length > 0) {
-        setAnimationValues(chartData.map(d => d.value));
-      } else {
-        setAnimationValues([]);
-      }
+      setAnimationValues(activeData.map(item => item.value || 0));
     }
-  }, [isLoading, activeTab, chartData]);
+  }, [isLoading, activeTab, activeData]);
 
-  const data = {
-    labels: chartData.map(d => {
-      const rangeStart = Math.round(d.range);
-      const rangeEnd = Math.round(d.range + d.binInterval);
-      return `${rangeStart}-${rangeEnd}`;
-    }),
+  // Prepare chart data
+  const chartData = {
+    labels: activeData.map(item => item.range || 'Unknown'),
     datasets: [{
       label: "Number of Trials",
-      data: isLoading ? animationValues : (chartData.map(d => d.value)) || [],
+      data: isLoading ? animationValues : activeData.map(item => item.value || 0),
       backgroundColor: isLoading 
         ? "rgba(254, 211, 166, 0.5)"
         : "#DCC0F1",
@@ -197,14 +130,6 @@ const EligibilityDistributionChart = ({ trials = [], isLoading = false }) => {
         hoverBackgroundColor: "#FDAA79",
         hoverBorderColor: "#FDAA79"
       }
-    },
-    layout: {
-      padding: {
-        left: 10,
-        right: 10,
-        top: 10,
-        bottom: 10
-      }
     }
   };
 
@@ -238,12 +163,12 @@ const EligibilityDistributionChart = ({ trials = [], isLoading = false }) => {
 
         {/* Chart container */}
         <div className="w-full" style={{ height: "225px", minHeight: "225px" }}>
-          {!isLoading && chartData.length === 0 ? (
+          {!isLoading && activeData.length === 0 ? (
             <div className="flex items-center justify-center h-full text-[#718096] text-sm">
               No data available for this category
             </div>
           ) : (
-            <Bar data={data} options={options} />
+            <Bar data={chartData} options={options} />
           )}
         </div>
       </div>

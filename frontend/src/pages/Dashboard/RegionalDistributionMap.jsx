@@ -1,9 +1,8 @@
-import React, { useMemo } from "react";
+import React from "react";
 import { MapContainer, TileLayer, Marker, Popup } from "react-leaflet";
 import L from "leaflet";
 import "leaflet/dist/leaflet.css";
 import Card from "../../components/ui/Card";
-import { getCountryCoordinates } from "../../utils/countryCoordinates";
 
 const customTrialIcon = new L.divIcon({
   className: "trial-marker",
@@ -12,28 +11,9 @@ const customTrialIcon = new L.divIcon({
   popupAnchor: [0, -10],
 });
 
-const RegionalDistributionMap = ({ trials = [] }) => {
-  const mapData = useMemo(() => {
-    if (!trials || !Array.isArray(trials)) return [];
-
-    const countryCounts = {};
-    trials.forEach((trial) => {
-      trial.locations?.forEach((location) => {
-        countryCounts[location] = (countryCounts[location] || 0) + 1;
-      });
-    });
-
-    return Object.entries(countryCounts)
-      .map(([country, count]) => ({
-        country,
-        count,
-        coordinates: getCountryCoordinates(country),
-      }))
-      .filter((item) => item.coordinates);
-  }, [trials]);
-
+const RegionalDistributionMap = ({ data = [] }) => {
   return (
-    <Card className="w-full max-w-[380px] min-w-[320px] max-h-[300px]">
+    <Card className="h-full flex flex-col">
       <h2 className="text-base font-medium text-[#6d7194] mb-2">Trials by Region</h2>
 
       <div className="flex flex-wrap gap-x-8 mb-3">
@@ -47,7 +27,7 @@ const RegionalDistributionMap = ({ trials = [] }) => {
         </div>
       </div>
 
-      <div className="w-full max-w-[380px] h-[210px] rounded-[10px] border overflow-hidden flex justify-center">
+      <div className="flex-grow rounded-[10px] border overflow-hidden">
         <MapContainer 
           center={[20, 0]} 
           zoom={2} 
@@ -58,8 +38,12 @@ const RegionalDistributionMap = ({ trials = [] }) => {
             url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
             attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
           />
-          {mapData.map((item, index) => (
-            <Marker key={index} position={[item.coordinates.lat, item.coordinates.lng]} icon={customTrialIcon}>
+          {data.map((item, index) => (
+            <Marker 
+              key={index} 
+              position={[item.coordinates.lat, item.coordinates.lng]} 
+              icon={customTrialIcon}
+            >
               <Popup>
                 <div style={{ fontFamily: "Inter", fontSize: "14px", fontWeight: 500 }}>
                   {item.country}: {item.count} trial(s)
