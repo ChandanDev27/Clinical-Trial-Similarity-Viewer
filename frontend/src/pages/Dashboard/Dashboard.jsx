@@ -71,25 +71,30 @@ const DashboardView = () => {
               />
 
               {isDashboardView ? (
-                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-                  <div className="lg:col-span-1">
-                    <TrialsByPhaseChart trials={filteredTrials} />
+                <div className="flex flex-col gap-6 w-full">
+
+                  <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+                    <div className="bg-white shadow-md rounded-lg border p-4 h-[337px]">
+                      <TrialsByPhaseChart trials={filteredTrials} />
+                    </div>
+                    
+                    <div className="bg-white shadow-md rounded-lg border p-4 h-[337px]">
+                      <TrialResultsChart trials={filteredTrials} />
+                    </div>
+
+                    <div className="bg-white shadow-md rounded-lg border p-4 h-[337px]">
+                      <RegionalDistributionMap trials={filteredTrials} />
+                    </div>
                   </div>
-  
-                  <div className="lg:col-span-1">
-                    <TrialResultsChart trials={filteredTrials} />
-                  </div>
-  
-                  <div className="lg:col-span-1">
-                    <RegionalDistributionMap trials={filteredTrials} />
-                  </div>
-  
-                  <div className="lg:col-span-1">
-                    <SponsorsChart trials={filteredTrials} selectedTrials={selectedTrialIds} />
-                  </div>
-  
-                  <div className="lg:col-span-2">
-                    <EligibilityDistributionChart data={eligibilityData} />
+
+                  <div className="flex flex-col md:flex-row gap-6">
+                    <div className="w-full md:w-[360px] bg-white shadow-md rounded-lg border p-4 h-[400px]">
+                      <SponsorsChart trials={filteredTrials} selectedTrials={selectedTrialIds} />
+                    </div>
+
+                    <div className="w-full md:w-[886px] bg-white shadow-md rounded-lg border p-4 h-[400px]">
+                      <EligibilityDistributionChart data={eligibilityData} />
+                    </div>
                   </div>
                 </div>
               ) : (
