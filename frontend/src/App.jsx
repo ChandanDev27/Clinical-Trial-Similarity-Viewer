@@ -1,8 +1,8 @@
-import Routes from './Routes';
+import SponsorsChartDevPage from "./testting/sponsorchart.test";
 
 function App() {
   return (
-        <Routes />
+    <SponsorsChartDevPage />
   );
 }
 

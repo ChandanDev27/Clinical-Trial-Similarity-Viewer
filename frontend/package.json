@@ -6,8 +6,6 @@
   "dependencies": {
     "@reduxjs/toolkit": "^2.8.1",
     "@testing-library/dom": "^10.4.0",
-    "@testing-library/jest-dom": "^6.6.3",
-    "@testing-library/react": "^16.3.0",
     "@testing-library/user-event": "^13.5.0",
     "axios": "^1.9.0",
     "chart.js": "^4.4.9",
@@ -57,7 +55,10 @@
   "author": "",
   "license": "ISC",
   "devDependencies": {
+    "@testing-library/jest-dom": "^6.6.3",
+    "@testing-library/react": "^16.3.0",
     "autoprefixer": "^10.4.17",
+    "jest": "^27.5.1",
     "postcss": "^8.4.35",
     "tailwindcss": "^3.4.17"
   }
