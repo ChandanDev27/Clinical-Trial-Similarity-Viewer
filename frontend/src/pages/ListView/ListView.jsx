@@ -1,49 +1,61 @@
-import React, { useState, useCallback } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import { useNavigate } from 'react-router-dom';
+import { useSelector, useDispatch } from 'react-redux';
+import { 
+  fetchTrials, 
+  toggleTrialSelection, 
+  selectAllTrials,
+  clearSelectedTrials,
+  selectAllTrialsData,
+  selectSelectedTrials
+} from '../../features/trials/trialsSlice';
 import TrialsTable from './TrialsTable';
 import Pagination from '../../components/navigation/Pagination';
-import useTrials from '../../hooks/useTrials';
-import useSelections from '../../hooks/useSelections';
 import ErrorBoundary from '../../components/feedback/ErrorBoundary';
 import LoadingSpinner from '../../components/loading/LoadingSpinner';
 import ErrorDisplay from '../../components/feedback/ErrorDisplay';
 import Header from '../../components/layout/Header';
-import TitleSection from '../../components/layout/TitleSection';
 import ViewToggle from '../../components/navigation/ViewToggle';
+import Button from '../../components/ui/Button';
+
 
 const ListView = () => {
-  const [viewMode, setViewMode] = useState('list');
   const [currentPage, setCurrentPage] = useState(1);
   const [itemsPerPage, setItemsPerPage] = useState(8);
-  
-  const { trials, loading, error, totalPages, totalItems } = useTrials(currentPage, itemsPerPage);
-  const { selectedTrials, saveSelections, fetchSelections } = useSelections();
-
+  const dispatch = useDispatch();
   const navigate = useNavigate();
+  
+  const trials = useSelector(selectAllTrialsData);
+  console.log("ListView trials:", trials);
+  const selectedTrials = useSelector(selectSelectedTrials);
+  const loading = useSelector(state => state.trials.loading);
+  const error = useSelector(state => state.trials.error);
+  
+  const totalItems = trials.length;
+  const totalPages = Math.ceil(totalItems / itemsPerPage);
 
-  // Changed handleViewChange to navigate based on the view choice
-  const handleViewChange = useCallback((view) => {
-    navigate(view === 'list' ? '/listview' : '/dashboard');
-  }, [navigate]);
+  useEffect(() => {
+    dispatch(fetchTrials());
+  }, [dispatch]);
 
-  const handleTrialSelect = useCallback(async (trialId) => {
-  const newSelections = selectedTrials.includes(trialId)
-    ? selectedTrials.filter(id => id !== trialId)
-    : [...selectedTrials, trialId];
-
-  await saveSelections(newSelections);
-  await fetchSelections();
-}, [selectedTrials, saveSelections, fetchSelections]);
-
+  const handleTrialSelect = useCallback((trialId) => {
+    dispatch(toggleTrialSelection(trialId));
+  }, [dispatch]);
 
   const handleSelectAll = useCallback((isSelected) => {
-    const newSelections = isSelected ? trials.map(trial => trial.nctId) : [];
-    saveSelections(newSelections);
-  }, [trials, saveSelections]);
+    const allTrialIds = trials
+      .slice((currentPage - 1) * itemsPerPage, currentPage * itemsPerPage)
+      .map(trial => trial.nctId);
+    dispatch(selectAllTrials(allTrialIds));
+  }, [dispatch, trials, currentPage, itemsPerPage]);
 
-  const handlePageChange = useCallback((page) => {
-    setCurrentPage(page);
-  }, []);
+  const handleClearSelections = useCallback(() => {
+    dispatch(clearSelectedTrials());
+  }, [dispatch]);
+
+  const handleNavigateToDashboard = useCallback(() => {
+    navigate('/dashboard');
+  }, [navigate]);
 
   if (loading) return <LoadingSpinner />;
   if (error) return <ErrorDisplay message={error} />;
@@ -55,15 +67,37 @@ const ListView = () => {
 
         <div className="p-5">
           <div className="bg-white rounded-t-xl p-6 border border-[#e9eaef]">
-            <TitleSection />
+            <h1 className="text-[20px] font-semibold text-[#232323] mb-2">
+              Clinical Trials List
+            </h1>
+            <p className="text-[14px] text-[#6d7194] mb-6">
+              {selectedTrials.length} trial(s) selected
+            </p>
 
             <div className="border-t border-[#e9eaef] pt-6 mb-6"></div>
             
-            {/* Using the updated ViewToggle which calls handleViewChange to navigate */}
-            <ViewToggle viewMode={viewMode} onViewChange={handleViewChange} />
-            
+            <div className="flex justify-between items-center mb-6">
+              <ViewToggle 
+                viewMode="list"
+                onViewChange={handleNavigateToDashboard}
+              />
+              
+              {selectedTrials.length > 0 && (
+                <Button 
+                  variant="secondary"
+                  className="px-4 py-2 text-sm"
+                  onClick={handleClearSelections}
+                >
+                  Clear Selections
+                </Button>
+              )}
+            </div>
+
             <TrialsTable 
-              trials={trials}
+              trials={trials.slice(
+                (currentPage - 1) * itemsPerPage,
+                currentPage * itemsPerPage
+              )}
               selectedTrials={selectedTrials}
               onTrialSelect={handleTrialSelect}
               onSelectAll={handleSelectAll}
@@ -74,7 +108,7 @@ const ListView = () => {
               itemsPerPage={itemsPerPage}
               totalPages={totalPages}
               totalItems={totalItems}
-              onPageChange={handlePageChange}
+              onPageChange={setCurrentPage}
               onItemsPerPageChange={setItemsPerPage}
               className="mt-6"
             />

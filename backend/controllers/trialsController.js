@@ -3,6 +3,9 @@ const path = require('path');
 const { AppError, handleError } = require('../utils/errorUtils');
 const _ = require('lodash');
 const fetch = require("node-fetch");
+const TrialService = require('../services/trialService');
+const { AppError } = require('../utils/errorUtils');
+const { validateRequest } = require('../middleware/validation');
 
 // Key Data Structures
 let cachedData = null;
@@ -170,7 +173,7 @@ const getAvailableSortFields = () => {
     { value: 'startDate', label: 'Start Date' },
     { value: 'endDate', label: 'End Date' },
     { value: 'locations', label: 'Location Count' },
-    { value: 'phases', label: 'Phase' }
+    { value: 'phases', label: 'Phase' } 
   ];
 };
 

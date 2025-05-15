@@ -3,14 +3,20 @@ import Card from "../../components/ui/Card";
 import sponsorLogos from "../../sponsorLogos";
 
 const SponsorsChart = ({ data = [] }) => {
-  // Calculate bar widths safely
   const calculateBarWidth = (count, maxCount) => {
     const maxBarWidth = 180;
     return maxCount > 0 ? (count / maxCount) * maxBarWidth : 0;
   };
 
-  // Safely calculate max count with fallback
-  const maxCount = Math.max(...data.map(s => s?.count || 0), 1);
+  const getSponsorLogo = (name) => {
+    if (!name || name === "Unknown Sponsor") return sponsorLogos.default;
+    return sponsorLogos[name] || sponsorLogos.default;
+  };
+
+  const validSponsors = data.filter(s => s.name && s.name !== "Unknown Sponsor");
+  const maxCount = validSponsors.length > 0 
+    ? Math.max(...validSponsors.map(s => s.count))
+    : 1;
 
   return (
     <Card className="h-full p-4">
@@ -24,27 +30,31 @@ const SponsorsChart = ({ data = [] }) => {
       </div>
 
       <div className="flex flex-col space-y-10 w-[325px] h-[370px]">
-        {data?.length > 0 ? (
-          data.map((sponsor) => (
+        {validSponsors.length > 0 ? (
+          validSponsors.map((sponsor) => (
             <div key={sponsor.name} className="flex items-center justify-between w-full">
-              <img
-                src={sponsorLogos[sponsor.name] || sponsorLogos["default"]}
-                alt={sponsor.name || "Unknown Sponsor"}
-                className="w-8 h-8 object-contain mr-2"
-                onError={(e) => {
-                  e.target.src = sponsorLogos["default"];
-                  e.target.alt = "Unknown Sponsor";
-                }}
-              />
-              <div className="flex-1 relative h-3 bg-gray-200 rounded-md">
-                <div
-                  className="absolute left-0 top-0 h-full bg-[#652995] rounded-md"
-                  style={{ width: `${calculateBarWidth(sponsor.count, maxCount)}px` }}
-                ></div>
+              <div className="flex items-center">
+                <img
+                  src={getSponsorLogo(sponsor.name)}
+                  alt=""
+                  className="w-8 h-8 object-contain mr-3"
+                  onError={(e) => {
+                    e.target.src = sponsorLogos.default;
+                  }}
+                />
               </div>
-              <span className="text-sm font-medium text-[#6d7194] min-w-[30px] text-right">
-                {sponsor.count}
-              </span>
+              
+              <div className="flex items-center">
+                <div className="w-[180px] relative h-3 bg-gray-200 rounded-md mr-3">
+                  <div
+                    className="absolute left-0 top-0 h-full bg-[#652995] rounded-md"
+                    style={{ width: `${calculateBarWidth(sponsor.count, maxCount)}px` }}
+                  ></div>
+                </div>
+                <span className="text-sm font-medium text-[#6d7194] min-w-[30px] text-right">
+                  {sponsor.count}
+                </span>
+              </div>
             </div>
           ))
         ) : (

@@ -106,8 +106,6 @@ export const getCountryToRegionMapping = () => ({
     'Australia': 'Oceania', 'Taiwan': 'Asia', 'Unknown': 'Unknown'
 });
 
-// Add these new functions to dataUtils.js
-
 export const processSponsorsData = (trials = [], selectedTrials = []) => {
   const sponsorsMap = new Map();
   const relevantTrials = selectedTrials.length 
@@ -115,14 +113,28 @@ export const processSponsorsData = (trials = [], selectedTrials = []) => {
     : trials;
 
   relevantTrials.forEach(trial => {
-    const sponsorName = trial.sponsor?.trim() || "Unknown Sponsor";
-    sponsorsMap.set(sponsorName, (sponsorsMap.get(sponsorName) || 0) + 1);
+    // Use sponsorType from your sample data
+    const rawName = trial.sponsorType || 
+                   trial.sponsor?.trim() || 
+                   trial.leadSponsor?.name?.trim() || 
+                   trial.sponsors?.[0]?.name?.trim() || 
+                   trial.funder?.name?.trim() || 
+                   null;
+
+    if (!rawName) return;
+
+    // Simplify the cleaning - just trim whitespace
+    const cleanName = rawName.trim();
+
+    if (cleanName && cleanName !== "Unknown") {
+      sponsorsMap.set(cleanName, (sponsorsMap.get(cleanName) || 0) + 1);
+    }
   });
 
   return Array.from(sponsorsMap.entries())
     .map(([name, count]) => ({ name, count }))
     .sort((a, b) => b.count - a.count)
-    .slice(0, 4);
+    .slice(0, 5);
 };
 
 export const processPhaseData = (trials) => {
@@ -167,23 +179,34 @@ export const processRegionalData = (trials) => {
   const countryToRegion = getCountryToRegionMapping();
 
   trials.forEach(trial => {
+    if (!trial.locations || trial.locations.length === 0) {
+      countryCounts['Unknown'] = (countryCounts['Unknown'] || 0) + 1;
+      return;
+    }
+
     trial.locations?.forEach(location => {
-      const country = location.country || 'Unknown';
+      const country = typeof location === 'string' ? location : (location.country || 'Unknown');
       countryCounts[country] = (countryCounts[country] || 0) + 1;
     });
   });
 
   return Object.entries(countryCounts)
-    .map(([country, count]) => ({
-      country,
-      count,
-      region: countryToRegion[country] || 'Unknown',
-      coordinates: getCountryCoordinates(country)
-    }))
-    .filter(item => item.coordinates);
+    .map(([country, count]) => {
+      const coordinates = getCountryCoordinates(country);
+      if (!coordinates) {
+        console.warn(`No coordinates found for country: ${country}`);
+        return null;
+      }
+      return {
+        country,
+        count,
+        region: countryToRegion[country] || 'Unknown',
+        coordinates
+      };
+    })
+    .filter(Boolean);
 };
 
-// Helper function to get region color (consistent with RegionalDistributionMap)
 export const getRegionColor = (region) => {
   const colors = {
     'Europe': '#8884d8',

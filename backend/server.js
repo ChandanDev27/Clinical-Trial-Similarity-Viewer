@@ -3,41 +3,57 @@ const cors = require('cors');
 const trialsRoutes = require('./routes/trialsRoutes');
 const logger = require('./middleware/logger');
 const errorHandler = require('./middleware/errorHandler');
+const { connectToDatabase } = require('./db');
 require('dotenv').config();
 
-// Initialize Express app
 const app = express();
 const port = process.env.PORT || 5000;
 
-// Configure CORS with dynamic origin
-app.use(cors({
-  origin: 'http://localhost:3000',
-  methods: ['GET', 'POST', 'PUT', 'DELETE'],
-  allowedHeaders: ['Content-Type']
-}));
+// Database connection
+connectToDatabase();
 
-// Essential middleware stack
+// Enhanced CORS configuration
+const corsOptions = {
+  origin: process.env.FRONTEND_URL || 'http://localhost:3000',
+  methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
+  allowedHeaders: ['Content-Type', 'Authorization'],
+  credentials: true
+};
+
+app.use(cors(corsOptions));
 app.use(express.json());
 app.use(logger);
 
 // API routes
 app.use('/api/trials', trialsRoutes);
 
-// Error handling
-app.use(errorHandler);
-
-// Health check endpoint
+// Health check with more details
 app.get('/health', (req, res) => {
-  res.status(200).json({ status: 'ok' });
+  res.status(200).json({ 
+    status: 'ok',
+    timestamp: new Date().toISOString(),
+    uptime: process.uptime(),
+    environment: process.env.NODE_ENV || 'development'
+  });
 });
 
-// Start server
+// 404 handler
+app.use((req, res, next) => {
+  res.status(404).json({ 
+    success: false,
+    message: `Route ${req.originalUrl} not found` 
+  });
+});
+
+app.use(errorHandler);
+
 const server = app.listen(port, () => {
   console.log(`Server running on port ${port}`);
 });
 
-// Handle unhandled promise rejections
 process.on('unhandledRejection', (err) => {
   console.error('Unhandled Rejection:', err);
   server.close(() => process.exit(1));
 });
+
+module.exports = app;
