@@ -1,70 +1,46 @@
-# Getting Started with Create React App
+# Clinical Trial Similarity Viewer 🔬
 
-This project was bootstrapped with [Create React App](https://github.com/facebook/create-react-app).
+![Dashboard Preview](..\public\images\dashboard-preview.png) *Example dashboard view*
 
-## Available Scripts
+A full-stack web application for analyzing clinical trial similarity data, helping researchers compare trial designs and outcomes. Built with modern web technologies for responsive data visualization.
 
-In the project directory, you can run:
+## ✨ Features
 
-### `npm start`
+- **Multi-view exploration**  
+  - 📋 List View: Tabular data with sorting/pagination
+  - 📊 Dashboard View: Interactive charts/maps
+  - 🔢 Score View: Similarity metrics (future enhancement)
 
-Runs the app in the development mode.\
-Open [http://localhost:3000](http://localhost:3000) to view it in your browser.
+- **Smart interactions**
+  - Multi-select trials across views
+  - Real-time visual updates
+  - Contextual tooltips & error handling
+  - Responsive across devices
 
-The page will reload when you make changes.\
-You may also see any lint errors in the console.
+- **Data visualization**
+  - Regional distribution maps (Leaflet)
+  - Interactive charts (Chart.js)
+  - Eligibility criteria breakdowns
+  - Sponsor analysis
 
-### `npm test`
+## 🛠 Tech Stack
 
-Launches the test runner in the interactive watch mode.\
-See the section about [running tests](https://facebook.github.io/create-react-app/docs/running-tests) for more information.
+**Frontend**  
+![React](https://img.shields.io/badge/-React-61DAFB?logo=react&logoColor=white)
+![Redux](https://img.shields.io/badge/-Redux-764ABC?logo=redux&logoColor=white)
+![Tailwind CSS](https://img.shields.io/badge/-Tailwind_CSS-38B2AC?logo=tailwind-css&logoColor=white)
 
-### `npm run build`
+**Backend**  
+![Node.js](https://img.shields.io/badge/-Node.js-339933?logo=node.js&logoColor=white)
+![Express](https://img.shields.io/badge/-Express-000000?logo=express&logoColor=white)
 
-Builds the app for production to the `build` folder.\
-It correctly bundles React in production mode and optimizes the build for the best performance.
+**Visualization**  
+![Chart.js](https://img.shields.io/badge/-Chart.js-FF6384?logo=chart.js&logoColor=white)
+![Leaflet](https://img.shields.io/badge/-Leaflet-199900?logo=leaflet&logoColor=white)
 
-The build is minified and the filenames include the hashes.\
-Your app is ready to be deployed!
+## 🚀 Installation
 
-See the section about [deployment](https://facebook.github.io/create-react-app/docs/deployment) for more information.
-
-### `npm run eject`
-
-**Note: this is a one-way operation. Once you `eject`, you can't go back!**
-
-If you aren't satisfied with the build tool and configuration choices, you can `eject` at any time. This command will remove the single build dependency from your project.
-
-Instead, it will copy all the configuration files and the transitive dependencies (webpack, Babel, ESLint, etc) right into your project so you have full control over them. All of the commands except `eject` will still work, but they will point to the copied scripts so you can tweak them. At this point you're on your own.
-
-You don't have to ever use `eject`. The curated feature set is suitable for small and middle deployments, and you shouldn't feel obligated to use this feature. However we understand that this tool wouldn't be useful if you couldn't customize it when you are ready for it.
-
-## Learn More
-
-You can learn more in the [Create React App documentation](https://facebook.github.io/create-react-app/docs/getting-started).
-
-To learn React, check out the [React documentation](https://reactjs.org/).
-
-### Code Splitting
-
-This section has moved here: [https://facebook.github.io/create-react-app/docs/code-splitting](https://facebook.github.io/create-react-app/docs/code-splitting)
-
-### Analyzing the Bundle Size
-
-This section has moved here: [https://facebook.github.io/create-react-app/docs/analyzing-the-bundle-size](https://facebook.github.io/create-react-app/docs/analyzing-the-bundle-size)
-
-### Making a Progressive Web App
-
-This section has moved here: [https://facebook.github.io/create-react-app/docs/making-a-progressive-web-app](https://facebook.github.io/create-react-app/docs/making-a-progressive-web-app)
-
-### Advanced Configuration
-
-This section has moved here: [https://facebook.github.io/create-react-app/docs/advanced-configuration](https://facebook.github.io/create-react-app/docs/advanced-configuration)
-
-### Deployment
-
-This section has moved here: [https://facebook.github.io/create-react-app/docs/deployment](https://facebook.github.io/create-react-app/docs/deployment)
-
-### `npm run build` fails to minify
-
-This section has moved here: [https://facebook.github.io/create-react-app/docs/troubleshooting#npm-run-build-fails-to-minify](https://facebook.github.io/create-react-app/docs/troubleshooting#npm-run-build-fails-to-minify)
+1. **Clone repository**
+   ```bash
+   git clone https://github.com/yourusername/clinical-trial-viewer.git
+   cd clinical-trial-viewer
