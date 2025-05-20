@@ -1,4 +1,5 @@
 import React from "react";
+import PropTypes from "prop-types";
 import Card from "../../components/ui/Card";
 import { Bar } from "react-chartjs-2";
 import { Chart as ChartJS, BarElement, CategoryScale, LinearScale, Tooltip, Legend } from "chart.js";
@@ -47,20 +48,17 @@ const TrialsByPhaseChart = ({ data = [] }) => {
         ticks: { display: true, color: "#6d7194", font: { weight: "bold" } },
       },
       y: {
-        grid: { display: false },
+        beginAtZero: true,
         border: { display: false },
-          ticks: {
-          display: true,
-          color: "#6d7194",
-          font: { weight: "bold" },
-          autoSkip: false,
+        ticks: {
+          precision: 0,
           stepSize: 5,
-          min: 0,
-          max: 20,
+          font: { size: 11, weight: "bold" },
+          color: "#6d7194"
         },
-        suggestedMax: 20,
-      },
-    },
+        grid: { display: false }
+      }
+    }
   };
 
   return (
@@ -74,7 +72,7 @@ const TrialsByPhaseChart = ({ data = [] }) => {
         </div>
       </div>
 
-      {Object.keys(data).length === 0 ? (
+      {data.length === 0 ? (
         <div className="text-sm text-[#6d7194] flex-grow flex items-center justify-center">
           No phase data available
         </div>
@@ -85,6 +83,15 @@ const TrialsByPhaseChart = ({ data = [] }) => {
       )}
     </Card>
   );
+};
+
+TrialsByPhaseChart.propTypes = {
+  data: PropTypes.arrayOf(
+    PropTypes.shape({
+      phase: PropTypes.string,
+      count: PropTypes.number
+    })
+  )
 };
 
 export default TrialsByPhaseChart;

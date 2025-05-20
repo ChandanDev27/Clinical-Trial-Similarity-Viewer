@@ -1,4 +1,5 @@
 import React, { Component } from 'react';
+import PropTypes from 'prop-types';
 
 class ErrorBoundary extends Component {
   constructor(props) {
@@ -18,7 +19,7 @@ class ErrorBoundary extends Component {
     this.setState({ hasError: false, error: null });
   };
 
-    render() {
+  render() {
     if (this.state.hasError) {
       return (
         <div className="min-h-screen bg-[#f7f2fb] flex items-center justify-center flex-col">
@@ -38,5 +39,9 @@ class ErrorBoundary extends Component {
     return this.props.children;
   }
 }
+
+ErrorBoundary.propTypes = {
+  children: PropTypes.node.isRequired
+};
 
 export default ErrorBoundary;

@@ -1,5 +1,33 @@
-import { createSlice, createAsyncThunk } from '@reduxjs/toolkit';
+import { createSlice, createAsyncThunk, createSelector } from '@reduxjs/toolkit';
 import { fetchTrials as fetchTrialsAPI } from '../../services/api';
+import getCountryCoordinates from '../../utils/countryCoordinates';
+import { getCountryToRegionMapping } from '../../utils/dataUtils';
+
+const processRegionalData = (trials) => {
+  const countryCounts = {};
+  
+  trials.forEach(trial => {
+    if (!trial.locations || trial.locations.length === 0) {
+      countryCounts['Unknown'] = (countryCounts['Unknown'] || 0) + 1;
+      return;
+    }
+
+    trial.locations?.forEach(location => {
+      const country = typeof location === 'string' ? location : (location.country || 'Unknown');
+      countryCounts[country] = (countryCounts[country] || 0) + 1;
+    });
+  });
+
+  return Object.entries(countryCounts).map(([country, count]) => {
+    const coordinates = getCountryCoordinates(country) || { lat: 20, lng: 0 };
+    return {
+      country,
+      count,
+      coordinates,
+      region: getCountryToRegionMapping()[country] || 'Unknown'
+    };
+  });
+};
 
 // Fetch trials asynchronously
 export const fetchTrials = createAsyncThunk(
@@ -112,5 +140,14 @@ export const selectFilteredTrials = (state) => {
 };
 export const selectTrialsLoading = (state) => state.trials.loading;
 export const selectTrialsError = (state) => state.trials.error;
+export const selectMapData = createSelector(
+  [selectAllTrialsData, selectSelectedTrials],
+  (trials, selectedTrials) => {
+    const trialsToProcess = selectedTrials.length > 0
+      ? trials.filter(trial => selectedTrials.includes(trial.nctId))
+      : trials;
+    return processRegionalData(trialsToProcess);
+  }
+);
 
 export default trialsSlice.reducer;

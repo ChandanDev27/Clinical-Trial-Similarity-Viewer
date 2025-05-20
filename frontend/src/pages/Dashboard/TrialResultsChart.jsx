@@ -1,4 +1,5 @@
 import React from "react";
+import PropTypes from "prop-types";
 import Card from "../../components/ui/Card";
 import { Doughnut } from "react-chartjs-2";
 import { Chart as ChartJS, ArcElement, Tooltip, Legend } from "chart.js";
@@ -6,7 +7,6 @@ import { Chart as ChartJS, ArcElement, Tooltip, Legend } from "chart.js";
 ChartJS.register(ArcElement, Tooltip, Legend);
 
 const TrialResultsChart = ({ data = [] }) => {
-  // Chart data configuration
   const chartData = {
     labels: data.map(item => item.result),
     datasets: [{
@@ -16,11 +16,10 @@ const TrialResultsChart = ({ data = [] }) => {
     }]
   };
 
-  // Size constants (in pixels)
   const DONUT_SIZE = 172;
   const ELLIPSE_SIZE = 180;
-  const CUTOUT_SIZE = ELLIPSE_SIZE * 0.4; // Keeps the same ratio
-  const MARGIN = (ELLIPSE_SIZE - DONUT_SIZE) / 2; // 19px
+  const CUTOUT_SIZE = ELLIPSE_SIZE * 0.4;
+  const MARGIN = (ELLIPSE_SIZE - DONUT_SIZE) / 2;
 
   return (
     <Card className="p-5 flex flex-col items-center">
@@ -41,19 +40,16 @@ const TrialResultsChart = ({ data = [] }) => {
         </div>
       </div>
 
-      {/* Container with exact dimensions */}
       <div className="relative" style={{ 
         width: `${ELLIPSE_SIZE}px`, 
         height: `${ELLIPSE_SIZE}px`
       }}>
-        {/* Background ellipse with perfect cutout */}
         <svg 
           width={ELLIPSE_SIZE} 
           height={ELLIPSE_SIZE} 
           viewBox={`0 0 ${ELLIPSE_SIZE} ${ELLIPSE_SIZE}`}
           className="absolute"
         >
-          {/* Outer ellipse */}
           <ellipse
             cx={ELLIPSE_SIZE/2}
             cy={ELLIPSE_SIZE/2}
@@ -61,7 +57,6 @@ const TrialResultsChart = ({ data = [] }) => {
             ry={ELLIPSE_SIZE/2}
             fill="#F4F5FA"
           />
-          {/* Inner cutout */}
           <circle
             cx={ELLIPSE_SIZE/2}
             cy={ELLIPSE_SIZE/2}
@@ -70,7 +65,6 @@ const TrialResultsChart = ({ data = [] }) => {
           />
         </svg>
 
-        {/* Perfectly centered donut chart */}
         <div className="absolute inset-0 flex items-center justify-center">
           <Doughnut
             data={chartData}
@@ -92,6 +86,15 @@ const TrialResultsChart = ({ data = [] }) => {
       </div>
     </Card>
   );
+};
+
+TrialResultsChart.propTypes = {
+  data: PropTypes.arrayOf(
+    PropTypes.shape({
+      result: PropTypes.string,
+      count: PropTypes.number
+    })
+  )
 };
 
 export default TrialResultsChart;

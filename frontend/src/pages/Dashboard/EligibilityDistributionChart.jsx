@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from "react";
+import PropTypes from "prop-types";
 import Card from "../../components/ui/Card";
 import { Bar } from "react-chartjs-2";
 import {
@@ -29,16 +30,11 @@ const EligibilityDistributionChart = ({ data = {}, isLoading = false }) => {
   const [activeTab, setActiveTab] = useState(tabs[0].id);
   const [animationValues, setAnimationValues] = useState([]);
 
-  // Get the active tab data or empty array if not found
   const activeData = data[activeTab] || [];
 
-  // Create placeholder data for animation
   useEffect(() => {
     if (isLoading) {
-      // Start with all values at 0
       setAnimationValues(Array(5).fill(0));
-      
-      // Animate each bar one by one with slight delay between them
       const interval = setInterval(() => {
         setAnimationValues(prev => {
           const newValues = [...prev];
@@ -50,26 +46,19 @@ const EligibilityDistributionChart = ({ data = {}, isLoading = false }) => {
           return newValues;
         });
       }, 100);
-
       return () => clearInterval(interval);
     } else {
-      // When loading is complete, animate to actual values
       setAnimationValues(activeData.map(item => item.value || 0));
     }
   }, [isLoading, activeTab, activeData]);
 
-  // Prepare chart data
   const chartData = {
     labels: activeData.map(item => item.range || 'Unknown'),
     datasets: [{
       label: "Number of Trials",
       data: isLoading ? animationValues : activeData.map(item => item.value || 0),
-      backgroundColor: isLoading 
-        ? "rgba(254, 211, 166, 0.5)"
-        : "#DCC0F1",
-      borderColor: isLoading 
-        ? "rgba(253, 170, 121, 0.5)" 
-        : "#FDAA79",
+      backgroundColor: isLoading ? "rgba(254, 211, 166, 0.5)" : "#DCC0F1",
+      borderColor: isLoading ? "rgba(253, 170, 121, 0.5)" : "#FDAA79",
       borderWidth: 1,
     }],
   };
@@ -77,18 +66,14 @@ const EligibilityDistributionChart = ({ data = {}, isLoading = false }) => {
   const options = {
     responsive: true,
     maintainAspectRatio: false,
-    animation: {
-      duration: isLoading ? 0 : 1000,
-      easing: 'easeOutQuart'
-    },
+    animation: { duration: isLoading ? 0 : 1000,easing: 'easeOutQuart' },
     plugins: {
       legend: { display: false },
       tooltip: {
         enabled: !isLoading,
         callbacks: {
           title: (items) => {
-            const item = items[0];
-            const label = item.label;
+            const label = items[0].label;
             return `${tabs.find(t => t.id === activeTab)?.label}: ${label}`;
           },
           label: (tooltipItem) => `${tooltipItem.raw} trial${tooltipItem.raw !== 1 ? 's' : ''}`,
@@ -102,23 +87,8 @@ const EligibilityDistributionChart = ({ data = {}, isLoading = false }) => {
       }
     },
     scales: {
-      x: {
-        title: { display: false },
-        grid: { display: false },
-        border: { display: false },
-        ticks: { font: { size: 11 } }
-      },
-      y: {
-        beginAtZero: true,
-        border: { display: false },
-        title: { display: false },
-        ticks: {
-          precision: 0,
-          stepSize: 1,
-          font: { size: 11 }
-        },
-        grid: { display: false }
-      }
+      x: { grid: { display: false }, border: { display: false } },
+      y: { beginAtZero: true, border: { display: false }, grid: { display: false } }
     },
     elements: {
       bar: {
@@ -136,11 +106,9 @@ const EligibilityDistributionChart = ({ data = {}, isLoading = false }) => {
   return (
     <Card className="p-4 md:p-6 w-full max-w-full overflow-hidden">
       <div className="flex flex-col gap-6 w-full">
-        {/* Header section */}
         <div className="flex flex-col gap-4 w-full">
           <h2 className="text-base font-medium text-[#6d7194]">Eligibility Distribution</h2>
           
-          {/* Scrollable tabs container */}
           <div className="w-full overflow-x-auto pb-2">
             <div className="flex flex-wrap gap-3 min-w-max">
               {tabs.map((tab) => (
@@ -161,7 +129,6 @@ const EligibilityDistributionChart = ({ data = {}, isLoading = false }) => {
           </div>
         </div>
 
-        {/* Chart container */}
         <div className="w-full" style={{ height: "225px", minHeight: "225px" }}>
           {!isLoading && activeData.length === 0 ? (
             <div className="flex items-center justify-center h-full text-[#718096] text-sm">
@@ -174,6 +141,11 @@ const EligibilityDistributionChart = ({ data = {}, isLoading = false }) => {
       </div>
     </Card>
   );
+};
+
+EligibilityDistributionChart.propTypes = {
+  data: PropTypes.object,
+  isLoading: PropTypes.bool
 };
 
 export default EligibilityDistributionChart;

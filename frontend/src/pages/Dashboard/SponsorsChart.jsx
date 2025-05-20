@@ -1,4 +1,5 @@
 import React from "react";
+import PropTypes from "prop-types";
 import Card from "../../components/ui/Card";
 import sponsorLogos from "../../sponsorLogos";
 
@@ -65,6 +66,15 @@ const SponsorsChart = ({ data = [] }) => {
       </div>
     </Card>
   );
+};
+
+SponsorsChart.propTypes = {
+  data: PropTypes.arrayOf(
+    PropTypes.shape({
+      name: PropTypes.string,
+      count: PropTypes.number
+    })
+  )
 };
 
 export default SponsorsChart;

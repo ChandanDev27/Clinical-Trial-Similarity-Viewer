@@ -35,7 +35,8 @@ const countCategories = (values) => {
     counts[key] = (counts[key] || 0) + 1;
   });
   
-  return Object.entries(counts).map(([range, value]) => ({ range, value }));
+  return Object.entries(counts)
+  .map(([range, value]) => ({ range, value }));
 };
 
 export const getEligibilityData = (trials = []) => {
@@ -105,6 +106,19 @@ export const getCountryToRegionMapping = () => ({
     'Korea (Republic of)': 'Asia', 'Saudi Arabia': 'Asia', 'Turkey': 'Asia',
     'Australia': 'Oceania', 'Taiwan': 'Asia', 'Unknown': 'Unknown'
 });
+
+const getFallbackCoordinates = (country, countryToRegion) => {
+  const continentCenters = {
+    'Europe': { lat: 54.5260, lng: 15.2551 },
+    'Americas': { lat: 19.4326, lng: -99.1332 },
+    'Asia': { lat: 34.0479, lng: 100.6197 },
+    'Africa': { lat: 8.7832, lng: 34.5085 },
+    'Oceania': { lat: -25.2744, lng: 133.7751 },
+    'Unknown': { lat: 20, lng: 0 }
+  };
+
+    return continentCenters[countryToRegion[country] || 'Unknown'];
+};
 
 export const processSponsorsData = (trials = [], selectedTrials = []) => {
   const sponsorsMap = new Map();
@@ -192,10 +206,9 @@ export const processRegionalData = (trials) => {
 
   return Object.entries(countryCounts)
     .map(([country, count]) => {
-      const coordinates = getCountryCoordinates(country);
+      let coordinates = getCountryCoordinates(country);
       if (!coordinates) {
-        console.warn(`No coordinates found for country: ${country}`);
-        return null;
+        coordinates = getFallbackCoordinates(country, countryToRegion);
       }
       return {
         country,
@@ -203,8 +216,7 @@ export const processRegionalData = (trials) => {
         region: countryToRegion[country] || 'Unknown',
         coordinates
       };
-    })
-    .filter(Boolean);
+    });
 };
 
 export const getRegionColor = (region) => {
@@ -218,4 +230,3 @@ export const getRegionColor = (region) => {
   };
   return colors[region] || '#8884d8';
 };
-
