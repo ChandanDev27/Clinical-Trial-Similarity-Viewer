@@ -3,14 +3,10 @@ const cors = require('cors');
 const trialsRoutes = require('./routes/trialsRoutes');
 const logger = require('./middleware/logger');
 const errorHandler = require('./middleware/errorHandler');
-const { connectToDatabase } = require('./db');
 require('dotenv').config();
 
 const app = express();
 const port = process.env.PORT || 5000;
-
-// Database connection
-connectToDatabase();
 
 // Enhanced CORS configuration
 const corsOptions = {

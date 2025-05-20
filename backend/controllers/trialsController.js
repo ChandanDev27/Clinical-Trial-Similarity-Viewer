@@ -1,17 +1,17 @@
-const fs = require('fs');
 const path = require('path');
-const { AppError, handleError } = require('../utils/errorUtils');
+const fs = require('fs');
+const { AppError, handleError } = require(path.join(__dirname, '../utils/errorUtils'));
 const _ = require('lodash');
 const fetch = require("node-fetch");
-const TrialService = require('../services/trialService');
-const { AppError } = require('../utils/errorUtils');
-const { validateRequest } = require('../middleware/validation');
-
-// Key Data Structures
-let cachedData = null;
-let lastModified = null;
 const dataPath = path.join(__dirname, '../data/sample-data.json');
 const selectionsPath = path.join(__dirname, 'selectedTrials.json');
+let cachedData = null;
+let lastModified = null;
+const logger = require('../middleware/logger');
+const errorHandler = require('../middleware/errorHandler');
+const { validateQueryParams, validateTrialId, validateEligibilityField } = require('../middleware/validators');
+const { Server } = require('http');
+
 
 // Country coordinates mapping
 
