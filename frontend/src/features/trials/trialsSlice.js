@@ -1,5 +1,5 @@
 import { createSlice, createAsyncThunk, createSelector } from '@reduxjs/toolkit';
-import { fetchTrials as fetchTrialsAPI } from '../../services/api';
+import { fetchTrials as fetchTrialsAPI, saveSelections as saveSelectionsAPI, fetchSelections as fetchSelectionsAPI } from '../../services/api';
 import getCountryCoordinates from '../../utils/countryCoordinates';
 import { getCountryToRegionMapping } from '../../utils/dataUtils';
 
@@ -29,77 +29,66 @@ const processRegionalData = (trials) => {
   });
 };
 
-// Fetch trials asynchronously
-export const fetchTrials = createAsyncThunk(
-  'trials/fetchTrials',
-  async () => {
-    const response = await fetchTrialsAPI();
-    console.log("Fetched Trials:", response.data);
-    return response.data;
+// Async Thunks
+export const fetchTrials = createAsyncThunk('trials/fetchTrials', async () => {
+  const response = await fetchTrialsAPI();
+  return response.data;
+});
+
+export const fetchSelections = createAsyncThunk('trials/fetchSelections', async () => {
+  const response = await fetchSelectionsAPI();
+  return response.trials || [];
+});
+
+export const toggleTrialSelection = createAsyncThunk(
+  'trials/toggleTrialSelection',
+  async (trialId, { dispatch, getState }) => {
+    dispatch(trialsSlice.actions._toggleTrialSelection(trialId));
+    const { selectedTrials } = getState().trials;
+    await saveSelectionsAPI(selectedTrials);
   }
 );
 
-// Load selected trials from localStorage
-const loadSelectedTrials = () => {
-  try {
-    const storedTrials = localStorage.getItem('selectedTrials');
-    return storedTrials ? JSON.parse(storedTrials) : [];
-  } catch (error) {
-    console.error('Failed to parse selected trials from localStorage', error);
-    return [];
+export const selectAllTrials = createAsyncThunk(
+  'trials/selectAllTrials',
+  async (trialIds, { dispatch }) => {
+    dispatch(trialsSlice.actions._selectAllTrials(trialIds));
+    await saveSelectionsAPI(trialIds);
   }
-};
+);
 
-// Save selected trials to localStorage
-const saveSelectedTrials = (selectedTrials) => {
-  try {
-    localStorage.setItem('selectedTrials', JSON.stringify(selectedTrials));
-  } catch (error) {
-    console.error('Failed to save selected trials to localStorage', error);
+export const clearSelectedTrials = createAsyncThunk(
+  'trials/clearSelectedTrials',
+  async (_, { dispatch }) => {
+    dispatch(trialsSlice.actions._clearSelectedTrials());
+    await saveSelectionsAPI([]);
   }
-};
+);
 
 const trialsSlice = createSlice({
   name: 'trials',
   initialState: {
     trials: [],
-    selectedTrials: loadSelectedTrials(),
+    selectedTrials: [],
     loading: false,
     error: null,
     lastUpdated: null,
   },
   reducers: {
-    selectTrial: (state, action) => {
-      if (!state.selectedTrials.includes(action.payload)) {
-        state.selectedTrials = [...state.selectedTrials, action.payload];
-        saveSelectedTrials(state.selectedTrials);
-      }
-    },
-    deselectTrial: (state, action) => {
-      state.selectedTrials = state.selectedTrials.filter(id => id !== action.payload);
-      saveSelectedTrials(state.selectedTrials);
-    },
-    toggleTrialSelection: (state, action) => {
+    _toggleTrialSelection: (state, action) => {
       const trialId = action.payload;
-      if (state.selectedTrials.includes(trialId)) {
-        state.selectedTrials = state.selectedTrials.filter(id => id !== trialId);
+      const index = state.selectedTrials.indexOf(trialId);
+      if (index !== -1) {
+        state.selectedTrials.splice(index, 1);
       } else {
-        state.selectedTrials = [...state.selectedTrials, trialId];
+        state.selectedTrials.push(trialId);
       }
-      saveSelectedTrials(state.selectedTrials);
     },
-    clearSelectedTrials: (state) => {
+    _selectAllTrials: (state, action) => {
+      state.selectedTrials = action.payload;
+    },
+    _clearSelectedTrials: (state) => {
       state.selectedTrials = [];
-      localStorage.removeItem('selectedTrials');
-    },
-    selectAllTrials: (state, action) => {
-      const trialIds = action.payload;
-      if (state.selectedTrials.length === trialIds.length) {
-        state.selectedTrials = [];
-      } else {
-        state.selectedTrials = [...new Set([...state.selectedTrials, ...trialIds])];
-      }
-      saveSelectedTrials(state.selectedTrials);
     },
   },
   extraReducers: (builder) => {
@@ -109,7 +98,6 @@ const trialsSlice = createSlice({
         state.error = null;
       })
       .addCase(fetchTrials.fulfilled, (state, action) => {
-        console.log("Payload from API:", action.payload);
         state.loading = false;
         state.trials = action.payload;
         state.lastUpdated = new Date().toISOString();
@@ -117,17 +105,14 @@ const trialsSlice = createSlice({
       .addCase(fetchTrials.rejected, (state, action) => {
         state.loading = false;
         state.error = action.error.message;
+      })
+      .addCase(fetchSelections.fulfilled, (state, action) => {
+        state.selectedTrials = action.payload;
       });
   },
 });
 
-export const { 
-  selectTrial, 
-  deselectTrial, 
-  clearSelectedTrials,
-  toggleTrialSelection,
-  selectAllTrials
-} = trialsSlice.actions;
+export const { _toggleTrialSelection, _selectAllTrials, _clearSelectedTrials } = trialsSlice.actions;
 
 // Selectors
 export const selectAllTrialsData = (state) => state.trials.trials;

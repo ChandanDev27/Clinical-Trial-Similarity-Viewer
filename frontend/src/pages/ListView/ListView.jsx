@@ -5,6 +5,7 @@ import {
   fetchTrials, 
   toggleTrialSelection, 
   selectAllTrials,
+  fetchSelections,
   clearSelectedTrials,
   selectAllTrialsData,
   selectSelectedTrials
@@ -36,6 +37,7 @@ const ListView = () => {
 
   useEffect(() => {
     dispatch(fetchTrials());
+    dispatch(fetchSelections());
   }, [dispatch]);
 
   const handleTrialSelect = useCallback((trialId) => {
