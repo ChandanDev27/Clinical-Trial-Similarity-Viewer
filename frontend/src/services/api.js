@@ -119,4 +119,3 @@ export const clearSelections = async () => {
   }
   return response.json();
 };
-  
